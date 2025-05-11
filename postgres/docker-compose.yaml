@@ -1,0 +1,34 @@
+services:
+  postgres:
+    image: postgres:17
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=concord    
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      retries: 5
+      timeout: 10s
+
+
+  pgadmin:
+    depends_on:
+      - postgres
+    image: dpage/pgadmin4:9.3.0
+    # restart: always
+    ports:
+      - 8888:80
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@user.com
+      PGADMIN_DEFAULT_PASSWORD: secret
+      PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: 'False'
+    volumes:
+      - ./servers.json:/pgadmin4/servers.json
+
+volumes:
+  db-data:
