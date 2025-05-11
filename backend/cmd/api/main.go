@@ -35,6 +35,8 @@ func main() {
 }
 
 func addRoutes(app *fiber.App, authHandler *auth.Handler) {
+	api := app.Group("/api")
+	addAuthRoutes(api, authHandler)
 	addCustom404Handler(app)
 }
 
@@ -78,4 +80,9 @@ func addCustom404Handler(app *fiber.App) {
 			"message": "Route not found",
 		})
 	})
+}
+
+func addAuthRoutes(api fiber.Router, authHandler *auth.Handler) {
+	api.Post("/register", authHandler.Register)
+	api.Post("/login", authHandler.Login)
 }
