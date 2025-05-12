@@ -1,5 +1,6 @@
 # Concord
 [![Go](https://github.com/andrelcunha/OtterMq/actions/workflows/go.yml/badge.svg)](https://github.com/andrelcunha/OtterMq/actions/workflows/go.yml)
+
 A **Discord-like real-time chat** platform built with **Go**, **Vue**, and **Quasar**, designed for learning and experimentation.
 
 ## Why Concord?
@@ -31,7 +32,7 @@ git clone https://github.com/yourusername/concord.git && cd concord/backend
 go mod tidy
 
 # Run the server
-go run main.go
+go run cmd/api/main.go
 ```
 
 ### Frontend
