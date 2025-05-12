@@ -1,3 +1,14 @@
 include:
   - ../postgres/docker-compose.yaml
   - ../redis/docker-compose.yaml
+
+services:
+  backend:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - .env.production:/app/.env
+    environment:
+      - GO_ENV=production
+
