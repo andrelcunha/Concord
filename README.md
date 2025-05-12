@@ -1,5 +1,5 @@
 # Concord
-[![Go](https://github.com/andrelcunha/OtterMq/actions/workflows/go.yml/badge.svg)](https://github.com/andrelcunha/OtterMq/actions/workflows/go.yml)
+[![Go](https://github.com/andrelcunha/Concord/actions/workflows/go.yml/badge.svg)](https://github.com/andrelcunha/Concord/actions/workflows/go.yml)
 
 A **Discord-like real-time chat** platform built with **Go**, **Vue**, and **Quasar**, designed for learning and experimentation.
 
