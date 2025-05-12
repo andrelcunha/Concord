@@ -11,9 +11,35 @@ func NewHandler(service *Service) *Handler {
 }
 
 func (h *Handler) Register(c *fiber.Ctx) error {
-	return c.SendString("Register")
+	var req struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request"})
+	}
+
+	user, err := h.service.Register(c.Context(), req.Username, req.Password)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(user)
 }
 
 func (h *Handler) Login(c *fiber.Ctx) error {
-	return c.SendString("Login")
+	var req struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request"})
+	}
+
+	token, err := h.service.Login(c.Context(), req.Username, req.Password)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{"token": token})
 }

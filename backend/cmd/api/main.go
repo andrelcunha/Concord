@@ -21,10 +21,11 @@ func main() {
 	defer redisClient.Close()
 
 	app := initializeFiber()
+	secret := config.Config("SECRET")
 
 	// Initialize auth service
 	authRepo := auth.NewRepository(dbPool)
-	authService := auth.NewService(authRepo, redisClient)
+	authService := auth.NewService(authRepo, redisClient, secret)
 	authHandler := auth.NewHandler(authService)
 
 	// Routes

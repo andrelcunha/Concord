@@ -4,7 +4,7 @@ BUILD_DIR=bin
 
 build: 
 	@mkdir -p $(BUILD_DIR)
-	@go build -ldflags "-X main.version=$(VERSION)" -o ./$(BUILD_DIR)/$(BINARY_NAME) ./cmd/main.go
+	@go build -ldflags "-X main.version=$(VERSION)" -o ./$(BUILD_DIR)/$(BINARY_NAME) ./cmd/api/main.go
 
 
 run: build
