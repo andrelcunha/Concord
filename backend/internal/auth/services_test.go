@@ -59,10 +59,11 @@ func TestService_Login(t *testing.T) {
 	mockRedis := redis.NewClient(&redis.Options{})
 	service := NewService(mockRepo, mockRedis, "testsecret")
 
-	token, err := service.Login(context.Background(), "testuser", "password123")
+	accessToken, refreshToken, err := service.Login(context.Background(), "testuser", "password123")
 	assert.NoError(t, err)
-	assert.NotEmpty(t, token)
+	assert.NotEmpty(t, accessToken)
+	assert.NotEmpty(t, refreshToken)
 
-	token, err = service.Login(context.Background(), "testuser", "wrongpassword")
+	accessToken, refreshToken, err = service.Login(context.Background(), "testuser", "wrongpassword")
 	assert.Error(t, err)
 }

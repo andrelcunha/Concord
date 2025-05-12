@@ -2,9 +2,13 @@ package auth
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"errors"
+	"time"
 
 	"github.com/andrelcunha/Concord/backend/pkg/models"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/redis/go-redis/v9"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -48,24 +52,24 @@ func (s *Service) Register(ctx context.Context, username, password string) (*mod
 func (s *Service) Login(ctx context.Context, username, password string) (string, string, error) {
 	user, err := s.repo.GetUserByUsername(ctx, username)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
-		return "", errors.New("invalid credentials")
+		return "", "", errors.New("invalid credentials")
 	}
 
 	accesToken, err := s.generateAccesToken(user.Username, s.secret)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	refreshToken, err := s.generateRefreshToken(user.Username, s.secret)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	return accesTokentoken, refreshToken, nil
+	return accesToken, refreshToken, nil
 }
 
 func (s *Service) Refresh(ctx context.Context, username, refreshToken string) (string, error) {
@@ -87,7 +91,7 @@ func (s *Service) Refresh(ctx context.Context, username, refreshToken string) (s
 func (s *Service) generateAccesToken(username, secret string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": username,
-		"exp": time.Now().Add(15 * time.Minutes).Unix(),
+		"exp": time.Now().Add(15 * time.Minute).Unix(),
 	})
 	return token.SignedString([]byte(secret))
 }

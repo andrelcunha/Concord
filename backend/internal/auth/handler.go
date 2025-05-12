@@ -36,10 +36,27 @@ func (h *Handler) Login(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request"})
 	}
 
-	token, err := h.service.Login(c.Context(), req.Username, req.Password)
+	accessToken, refreshToken, err := h.service.Login(c.Context(), req.Username, req.Password)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	return c.JSON(fiber.Map{"token": token})
+	return c.JSON(fiber.Map{"access_token": accessToken, "refresh_token": refreshToken})
+}
+
+func (h *Handler) Refresh(c *fiber.Ctx) error {
+	var req struct {
+		Username     string `json:"username"`
+		RefreshToken string `json:"refresh_token"`
+	}
+
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request"})
+	}
+
+	accessToken, err := h.service.Refresh(c.Context(), req.Username, req.RefreshToken)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"access_token": accessToken})
 }
