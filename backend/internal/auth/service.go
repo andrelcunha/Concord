@@ -45,7 +45,7 @@ func (s *Service) Register(ctx context.Context, username, password string) (*mod
 	return user, nil
 }
 
-func (s *Service) Login(ctx context.Context, username, password string) (string, error) {
+func (s *Service) Login(ctx context.Context, username, password string) (string, string, error) {
 	user, err := s.repo.GetUserByUsername(ctx, username)
 	if err != nil {
 		return "", err
@@ -55,15 +55,47 @@ func (s *Service) Login(ctx context.Context, username, password string) (string,
 		return "", errors.New("invalid credentials")
 	}
 
-	token, err := generateToken(user.Username, s.secret)
+	accesToken, err := s.generateAccesToken(user.Username, s.secret)
 	if err != nil {
 		return "", err
 	}
 
-	return token, nil
+	refreshToken, err := s.generateRefreshToken(user.Username, s.secret)
+	if err != nil {
+		return "", err
+	}
+
+	return accesTokentoken, refreshToken, nil
 }
 
-func generateToken(username, secret string) (string, error) {
-	// Implement JWT token generation logic here
-	return "jwt-token-placeholder", nil
+func (s *Service) Refresh(ctx context.Context, username, refreshToken string) (string, error) {
+	// Check if the refresh token is valid
+	storedToken, err := s.redis.Get(ctx, "refresh:"+username).Result()
+	if err == redis.Nil || storedToken != refreshToken {
+		return "", errors.New("invalid refresh token")
+	}
+
+	// Generate a new access token
+	accessToken, err := s.generateAccesToken(username, s.secret)
+	if err != nil {
+		return "", err
+	}
+
+	return accessToken, nil
+}
+
+func (s *Service) generateAccesToken(username, secret string) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub": username,
+		"exp": time.Now().Add(15 * time.Minutes).Unix(),
+	})
+	return token.SignedString([]byte(secret))
+}
+
+func (s *Service) generateRefreshToken(username, secret string) (string, error) {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return base64.URLEncoding.EncodeToString(b), nil
 }
