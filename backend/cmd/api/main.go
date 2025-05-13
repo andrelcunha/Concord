@@ -7,6 +7,7 @@ import (
 
 	"github.com/andrelcunha/Concord/backend/config"
 	"github.com/andrelcunha/Concord/backend/internal/auth"
+	"github.com/andrelcunha/Concord/backend/internal/middleware"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -29,16 +30,11 @@ func main() {
 	authHandler := auth.NewHandler(authService)
 
 	// Routes
-	addRoutes(app, authHandler)
-
+	addAuthRoutes(app, authHandler)
+	AddProtectedRoutes(app, secret)
+	addCustom404Handler(app)
 	// Start server
 	log.Fatal(app.Listen(":3000"))
-}
-
-func addRoutes(app *fiber.App, authHandler *auth.Handler) {
-	api := app.Group("/api")
-	addAuthRoutes(api, authHandler)
-	addCustom404Handler(app)
 }
 
 func initilizeDatabase() *pgxpool.Pool {
@@ -83,7 +79,16 @@ func addCustom404Handler(app *fiber.App) {
 	})
 }
 
-func addAuthRoutes(api fiber.Router, authHandler *auth.Handler) {
-	api.Post("/register", authHandler.Register)
-	api.Post("/login", authHandler.Login)
+func addAuthRoutes(app *fiber.App, authHandler *auth.Handler) {
+	app.Post("/register", authHandler.Register)
+	app.Post("/login", authHandler.Login)
+	app.Post("/refresh", authHandler.Refresh)
+}
+
+func AddProtectedRoutes(app *fiber.App, secret string) {
+	protected := app.Group("/api", middleware.Auth(secret))
+	protected.Get("/profile", func(ctx *fiber.Ctx) error {
+		userID := ctx.Locals("userID").(string)
+		return ctx.JSON(fiber.Map{"username": userID})
+	})
 }

@@ -64,8 +64,12 @@ func (s *Service) Login(ctx context.Context, username, password string) (string,
 		return "", "", err
 	}
 
-	refreshToken, err := s.generateRefreshToken(user.Username, s.secret)
+	refreshToken, err := s.generateRefreshToken()
 	if err != nil {
+		return "", "", err
+	}
+
+	if err := s.redis.Set(ctx, "refresh:"+user.Username, refreshToken, 24*time.Hour).Err(); err != nil {
 		return "", "", err
 	}
 
@@ -96,7 +100,7 @@ func (s *Service) generateAccesToken(username, secret string) (string, error) {
 	return token.SignedString([]byte(secret))
 }
 
-func (s *Service) generateRefreshToken(username, secret string) (string, error) {
+func (s *Service) generateRefreshToken() (string, error) {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
 		return "", err
