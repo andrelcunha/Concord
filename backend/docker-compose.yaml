@@ -5,6 +5,9 @@ include:
 services:
   backend:
     build: .
+    depends_on:
+      - postgres
+      - redis
     ports:
       - "3000:3000"
     volumes:
