@@ -64,6 +64,7 @@ func initializeFiber() *fiber.App {
 		// DisableStartupMessage: true,
 	}
 	app := fiber.New(config)
+	app.Use(middleware.CORSMiddleware())
 	app.Use(logger.New(logger.Config{
 		Output: os.Stdout, // TODO: Change this to a logger
 	}))
