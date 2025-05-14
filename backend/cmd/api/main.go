@@ -47,10 +47,15 @@ func initilizeDatabase() *pgxpool.Pool {
 }
 
 func initializeRedis() *redis.Client {
-	redisURL := config.Config("REDIS_URL")
-	redisClient := redis.NewClient(&redis.Options{
-		Addr: redisURL,
-	})
+	opt, err := redis.ParseURL(config.Config("REDIS_URL"))
+	if err != nil {
+		log.Fatalf("Failed to parse Redis URL: %v\n", err)
+	}
+	redisClient := redis.NewClient(opt)
+	if err := redisClient.Ping(context.Background()).Err(); err != nil {
+		log.Fatalf("Failed to connect to Redis: %v\n", err)
+	}
+	log.Println("Connected to Redis")
 	return redisClient
 }
 
