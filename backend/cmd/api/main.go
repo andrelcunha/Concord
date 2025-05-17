@@ -4,10 +4,12 @@ import (
 	"context"
 	"log"
 	"os"
+	"time"
 
 	"github.com/andrelcunha/Concord/backend/config"
 	"github.com/andrelcunha/Concord/backend/internal/auth"
 	"github.com/andrelcunha/Concord/backend/internal/middleware"
+	"github.com/avast/retry-go/v4"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -47,15 +49,29 @@ func initilizeDatabase() *pgxpool.Pool {
 }
 
 func initializeRedis() *redis.Client {
+
 	opt, err := redis.ParseURL(config.Config("REDIS_URL"))
 	if err != nil {
 		log.Fatalf("Failed to parse Redis URL: %v\n", err)
 	}
+	// retry 3 times
 	redisClient := redis.NewClient(opt)
-	if err := redisClient.Ping(context.Background()).Err(); err != nil {
-		log.Fatalf("Failed to connect to Redis: %v\n", err)
+	err = retry.Do(
+		func() error {
+			if err := redisClient.Ping(context.Background()).Err(); err != nil {
+				log.Printf("Failed to connect to Redis: %v\n", err)
+				log.Println("Retrying...")
+				return err
+			}
+			log.Println("Connected to Redis")
+			return nil
+		},
+		retry.Attempts(3),
+		retry.Delay(1*time.Second),
+	)
+	if err != nil {
+		log.Fatalf("Failed to connect to Redis after 3 attempts: %v\n", err)
 	}
-	log.Println("Connected to Redis")
 	return redisClient
 }
 
