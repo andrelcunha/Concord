@@ -1,6 +1,8 @@
 package auth
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"github.com/gofiber/fiber/v2"
+)
 
 type Handler struct {
 	service *Service
@@ -8,6 +10,15 @@ type Handler struct {
 
 func NewHandler(service *Service) *Handler {
 	return &Handler{service: service}
+}
+
+type LoginRequest struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type RefreshRequest struct {
+	RefreshToken string `json:"refresh_token"`
 }
 
 func (h *Handler) Register(c *fiber.Ctx) error {
@@ -28,10 +39,7 @@ func (h *Handler) Register(c *fiber.Ctx) error {
 }
 
 func (h *Handler) Login(c *fiber.Ctx) error {
-	var req struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
-	}
+	var req LoginRequest
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request"})
 	}
@@ -48,18 +56,40 @@ func (h *Handler) Login(c *fiber.Ctx) error {
 }
 
 func (h *Handler) Refresh(c *fiber.Ctx) error {
-	var req struct {
-		Username     string `json:"username"`
-		RefreshToken string `json:"refresh_token"`
-	}
+	var req RefreshRequest
 
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request"})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request",
+		})
 	}
 
-	accessToken, err := h.service.Refresh(c.Context(), req.Username, req.RefreshToken)
-	if err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
+	if req.RefreshToken == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Refresh token is required",
+		})
 	}
-	return c.JSON(fiber.Map{"access_token": accessToken})
+
+	accessToken, refreshToken, err := h.service.Refresh(c.Context(), req.RefreshToken)
+	if err != nil {
+		switch err {
+		case ErrInvalidRefreshToken:
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Invalid refresh token",
+			})
+		case ErrExpiredRefreshToken:
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Expired refresh token",
+			})
+		default:
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Internal server error",
+			})
+		}
+	}
+	return c.JSON(fiber.Map{
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+		"expires_in":    int(AccessTokenTTL.Seconds()),
+	})
 }
