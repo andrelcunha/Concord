@@ -73,7 +73,7 @@ const handleSubmit = async () => {
       localStorage.setItem('access_token', response.data.access_token)
       localStorage.setItem('refresh_token', response.data.refresh_token)
       localStorage.setItem('username', form.value.username)
-      router.push('/home')
+      router.push('/channels')
     } else {
       isLogin.value = true
       form.value.username = ''
