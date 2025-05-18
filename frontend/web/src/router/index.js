@@ -1,11 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthStore } from '@/stores/auth';
-import ChannelsView from '@/views/ChannelsView.vue'
 import Login from '@/components/Login.vue'
+import Channels from '@/views/ChannelsView.vue'
+import { useAuthStore } from '@/stores/auth';
 
 const routes = [
   { path: '/login', name: 'login', component: Login },
-  { path: '/channels', name: 'channels', component: ChannelsView },
+  { path: '/channels', name: 'channels', component: Channels },
   { path: '/', redirect: '/login' }
 ]
 
@@ -15,11 +15,11 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  // const authStore = useAuthStore()
-  const isAuthenticated = !!localStorage.getItem('access_token')
-  if (to.path === '/login' && isAuthenticated) {
-    next('/channels')
-  } else if (to.path !== '/login' && !isAuthenticated) {
+  const authStore = useAuthStore()
+  const isAuthenticated = authStore.isAuthenticated
+  console.log('Router guard: isAuthenticated:', isAuthenticated, 'to=', to.path)
+  if (to.path !== '/login' && !isAuthenticated) {
+    console.log('Router guard: redirecting to login')
     next('/login')
   } else {
     next()
