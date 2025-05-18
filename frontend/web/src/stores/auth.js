@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import axios from 'axios'
+import api from '@/api/axios'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -11,7 +11,7 @@ export const useAuthStore = defineStore('auth', {
   actions: {
     async login(credentials) {
       try {
-        const response = await axios.post('http://localhost:3000/login', credentials)
+        const response = await api.post('/login', credentials)
         console.log('Login response:', response.data)
         this.accessToken = response.data.access_token
         this.refreshToken = response.data.refresh_token
@@ -24,7 +24,7 @@ export const useAuthStore = defineStore('auth', {
     },
     async register(credentials) {
       try {
-        const response = await axios.post('http://localhost:3000/register', credentials)
+        const response = await api.post('/register', credentials)
         console.log('Register response:', response.data)
         return { username: response.data.username }
       } catch (error) {
@@ -34,7 +34,7 @@ export const useAuthStore = defineStore('auth', {
     },
     async refresh() {
       try {
-        const response = await axios.post('http://localhost:8080/refresh', {
+        const response = await api.post('/refresh', {
           refresh_token: this.refreshToken
         })
         console.log('Refresh response:', response.data)
