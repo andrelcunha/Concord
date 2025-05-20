@@ -93,3 +93,10 @@ func (h *Handler) Refresh(c *fiber.Ctx) error {
 		"expires_in":    int(AccessTokenTTL.Seconds()),
 	})
 }
+
+func RegisterAuthRoutes(app *fiber.App, service *Service) {
+	handler := NewHandler(service)
+	app.Post("/register", handler.Register)
+	app.Post("/login", handler.Login)
+	app.Post("/refresh", handler.Refresh)
+}

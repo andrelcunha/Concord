@@ -38,3 +38,14 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (GetUs
 	err := row.Scan(&i.Username, &i.Password)
 	return i, err
 }
+
+const getUserIDByUsername = `-- name: GetUserIDByUsername :one
+SELECT id FROM users WHERE username = $1
+`
+
+func (q *Queries) GetUserIDByUsername(ctx context.Context, username string) (int32, error) {
+	row := q.db.QueryRow(ctx, getUserIDByUsername, username)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
+}

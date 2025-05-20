@@ -8,6 +8,7 @@ import (
 
 	"github.com/andrelcunha/Concord/backend/config"
 	"github.com/andrelcunha/Concord/backend/internal/auth"
+	"github.com/andrelcunha/Concord/backend/internal/channels"
 	"github.com/andrelcunha/Concord/backend/internal/middleware"
 	"github.com/avast/retry-go/v4"
 	"github.com/gofiber/fiber/v2"
@@ -29,11 +30,14 @@ func main() {
 	// Initialize auth service
 	authRepo := auth.NewRepository(dbPool)
 	authService := auth.NewService(authRepo, redisClient, secret)
-	authHandler := auth.NewHandler(authService)
+	auth.RegisterAuthRoutes(app, authService)
 
-	// Routes
-	addAuthRoutes(app, authHandler)
-	AddProtectedRoutes(app, secret)
+	api := AddProtectedRoutes(app, secret)
+
+	// Initialize channels service
+	channelsService := channels.NewService(channels.NewRepository(dbPool))
+	channels.RegisterChannelsRoutes(api, channelsService)
+
 	addCustom404Handler(app)
 	// Start server
 	log.Fatal(app.Listen(":3000"))
@@ -101,16 +105,11 @@ func addCustom404Handler(app *fiber.App) {
 	})
 }
 
-func addAuthRoutes(app *fiber.App, authHandler *auth.Handler) {
-	app.Post("/register", authHandler.Register)
-	app.Post("/login", authHandler.Login)
-	app.Post("/refresh", authHandler.Refresh)
-}
-
-func AddProtectedRoutes(app *fiber.App, secret string) {
+func AddProtectedRoutes(app *fiber.App, secret string) fiber.Router {
 	protected := app.Group("/api", middleware.Auth(secret))
-	protected.Get("/profile", func(ctx *fiber.Ctx) error {
-		userID := ctx.Locals("userID").(string)
-		return ctx.JSON(fiber.Map{"username": userID})
-	})
+	// protected.Get("/profile", func(ctx *fiber.Ctx) error {
+	// 	userID := ctx.Locals("userID").(string)
+	// 	return ctx.JSON(fiber.Map{"username": userID})
+	// })
+	return protected
 }

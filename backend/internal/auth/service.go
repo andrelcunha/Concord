@@ -25,11 +25,6 @@ var (
 	ErrExpiredRefreshToken = errors.New("expired refresh token")
 )
 
-type Repository interface {
-	CreateUser(ctx context.Context, user *models.User) error
-	GetUserByUsername(ctx context.Context, username string) (*models.User, error)
-}
-
 type Service struct {
 	repo   Repository
 	redis  *redis.Client

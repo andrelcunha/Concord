@@ -30,7 +30,7 @@ func Auth(secret string) fiber.Handler {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid token claims"})
 		}
 
-		c.Locals("userID", claims["sub"])
+		c.Locals("username", claims["sub"])
 		return c.Next()
 	}
 }

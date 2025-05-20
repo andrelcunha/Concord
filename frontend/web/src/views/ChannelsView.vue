@@ -1,29 +1,61 @@
 <template>
-  <div class="min-h-screen bg-discord-bg flex items-center justify-center p-4 sm:p-6 lg:p-8">
-    <div class="bg-discord-card p-8 rounded-lg shadow-xl w-full max-w-md sm:max-w-lg text-center">
-      <h1 class="text-3xl sm:text-4xl font-bold text-white mb-4">Welcome, {{ username }}!</h1>
-      <p class="text-gray-400 text-sm mb-6">You're now logged into Concord.</p>
-      <button
-        @click="logout"
-        class="bg-discord-blurple text-white p-3 rounded-md hover:bg-discord-blurple-hover focus:outline-none focus:ring-2 focus:ring-discord-blurple transition font-medium"
-      >
-        Log Out
+  <div class="w-60 bg-discord-card p-4">
+    <h3 class="text-gray-400 text-sm uppercase tracking-wide mb-2">Channels</h3>
+    <ul class="space-y-2">
+      <li v-for="channel in channels" :key="channel.id" class="text-gray-300 hover:text-white cursor-pointer">
+        # {{ channel.name }}
+      </li>
+    </ul>
+    <button @click="showForm = true" class="mt-4 bg-discord-blurple text-white p-2 rounded-md hover:bg-discord-blurple-hover">
+      Add Channel
+    </button>
+    <div v-if="showForm" class="mt-4">
+      <input v-model="newChannelName" class="w-full p-2 bg-discord-input text-white rounded-md" placeholder="Channel name" />
+      <button @click="createChannel" class="mt-2 bg-discord-blurple text-white p-2 rounded-md hover:bg-discord-blurple-hover">
+        Create
       </button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import api from '../api/axios'
+import { useAuthStore } from '../stores/auth'
 
 const router = useRouter()
-const username = ref(localStorage.getItem('username') || 'User')
+const authStore = useAuthStore()
+const channels = ref([])
+const showForm = ref(false)
+const newChannelName = ref('')
 
-const logout = () => {
-  localStorage.removeItem('access_token')
-  localStorage.removeItem('refresh_token')
-  localStorage.removeItem('username')
-  router.push('/login')
+const fetchChannels = async () => {
+  try {
+    const response = await api.get('/api/channels')
+    channels.value = response.data
+  } catch (err) {
+    console.error('Failed to fetch channels:', err)
+  }
 }
+
+const createChannel = async () => {
+  try {
+    await api.post('/api/channels', { name: newChannelName.value })
+    newChannelName.value = ''
+    showForm.value = false
+    fetchChannels()
+  } catch (err) {
+    console.error('Failed to create channel:', err)
+  }
+}
+
+onMounted(() => {
+  if (!authStore.isAuthenticated) {
+    authStore.logout()
+    router.push('/login')
+  } else {
+    fetchChannels()
+  }
+})
 </script>
