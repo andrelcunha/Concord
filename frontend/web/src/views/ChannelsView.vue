@@ -2,8 +2,8 @@
   <div class="w-60 bg-discord-card p-4">
     <h3 class="text-gray-400 text-sm uppercase tracking-wide mb-2">Channels</h3>
     <ul class="space-y-2">
-      <li v-for="channel in channels" :key="channel.id" class="text-gray-300 hover:text-white cursor-pointer">
-        # {{ channel.name }}
+      <li v-for="channel in channels" :key="channel.Id" class="text-gray-300 hover:text-white cursor-pointer">
+        # {{ channel.Name }}
       </li>
     </ul>
     <button @click="showForm = true" class="mt-4 bg-discord-blurple text-white p-2 rounded-md hover:bg-discord-blurple-hover">
