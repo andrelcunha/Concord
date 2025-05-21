@@ -10,6 +10,7 @@ import (
 	"github.com/andrelcunha/Concord/backend/internal/auth"
 	"github.com/andrelcunha/Concord/backend/internal/channels"
 	"github.com/andrelcunha/Concord/backend/internal/middleware"
+	"github.com/andrelcunha/Concord/backend/internal/websocket"
 	"github.com/avast/retry-go/v4"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -37,6 +38,10 @@ func main() {
 	// Initialize channels service
 	channelsService := channels.NewService(channels.NewRepository(dbPool))
 	channels.RegisterChannelsRoutes(api, channelsService)
+
+	// Initialize websocket service
+	websocketService := websocket.NewService(websocket.NewRepository(dbPool), redisClient)
+	websocket.RegisterWebSocketRoutes(api, websocketService)
 
 	addCustom404Handler(app)
 	// Start server
