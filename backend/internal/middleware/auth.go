@@ -30,7 +30,18 @@ func Auth(secret string) fiber.Handler {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid token claims"})
 		}
 
-		c.Locals("username", claims["sub"])
+		userID, ok := claims["sub"].(float64)
+		if !ok {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid user ID"})
+		}
+
+		username, ok := claims["username"].(string)
+		if !ok {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid username"})
+		}
+
+		c.Locals("userID", int32(userID))
+		c.Locals("username", username)
 		return c.Next()
 	}
 }

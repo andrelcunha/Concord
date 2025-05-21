@@ -37,6 +37,7 @@ func (r *repository) GetUserByUsername(ctx context.Context, username string) (*m
 		return nil, err
 	}
 	return &models.User{
+		UserId:   user.ID,
 		Username: user.Username,
 		Password: user.Password,
 	}, nil

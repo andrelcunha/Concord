@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
+	"strconv"
 	"time"
 
 	"github.com/andrelcunha/Concord/backend/pkg/models"
@@ -52,6 +53,10 @@ func (s *Service) Register(ctx context.Context, username, password string) (*mod
 	if err := s.repo.CreateUser(ctx, user); err != nil {
 		return nil, err
 	}
+	user, err = s.repo.GetUserByUsername(ctx, username)
+	if err != nil {
+		return nil, err
+	}
 
 	return user, nil
 }
@@ -59,14 +64,17 @@ func (s *Service) Register(ctx context.Context, username, password string) (*mod
 func (s *Service) Login(ctx context.Context, username, password string) (string, string, error) {
 	user, err := s.repo.GetUserByUsername(ctx, username)
 	if err != nil {
-		return "", "", err
+		if err.Error() == "no rows in result set" {
+			return "", "", ErrInvalidCredentials
+		}
+		return "", "", ErrInvalidCredentials
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
 		return "", "", errors.New("invalid credentials")
 	}
 
-	accesToken, err := s.generateAccessToken(user.Username)
+	accesToken, err := s.generateAccessToken(int32(user.UserId), user.Username)
 	if err != nil {
 		return "", "", err
 	}
@@ -78,6 +86,7 @@ func (s *Service) Login(ctx context.Context, username, password string) (string,
 
 	redisKey := "refresh_token:" + refreshToken
 	err = s.redis.HSet(ctx, redisKey, map[string]interface{}{
+		"user_id":    user.UserId,
 		"username":   user.Username,
 		"expires_at": time.Now().Add(RefreshTokenTTL).Format(time.RFC3339),
 	}).Err()
@@ -112,8 +121,19 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (string, str
 		return "", "", ErrInvalidRefreshToken
 	}
 
+	userIDStr := val["user_id"]
+	if userIDStr == "" {
+		return "", "", ErrInvalidRefreshToken
+	}
+
+	// Convert userID string to int32
+	userID, err := strconv.ParseInt(userIDStr, 10, 32)
+	if err != nil {
+		return "", "", err
+	}
+
 	// Generate a new access token
-	accessToken, err := s.generateAccessToken(username)
+	accessToken, err := s.generateAccessToken(int32(userID), username)
 	if err != nil {
 		return "", "", err
 	}
@@ -127,6 +147,7 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (string, str
 	// Store new refresh token in Redis
 	newRedisKey := "refresh_token:" + newRefreshToken
 	err = s.redis.HSet(ctx, newRedisKey, map[string]interface{}{
+		"user_id":    userID,
 		"username":   username,
 		"expires_at": time.Now().Add(RefreshTokenTTL).Format(time.RFC3339),
 	}).Err()
@@ -141,10 +162,11 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (string, str
 	return accessToken, newRefreshToken, nil
 }
 
-func (s *Service) generateAccessToken(username string) (string, error) {
+func (s *Service) generateAccessToken(userID int32, username string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": username,
-		"exp": time.Now().Add(AccessTokenTTL).Unix(),
+		"sub":      float64(userID),
+		"username": username,
+		"exp":      time.Now().Add(AccessTokenTTL).Unix(),
 	})
 	return token.SignedString([]byte(s.secret))
 }

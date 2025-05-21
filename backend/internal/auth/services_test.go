@@ -53,6 +53,7 @@ func TestService_Login(t *testing.T) {
 		getUserFunc: func(ctx context.Context, username string) (*models.User, error) {
 			if username == "testuser" {
 				return &models.User{
+					UserId:   1,
 					Username: "testuser",
 					Password: string(hashedPassword),
 				}, nil
@@ -77,11 +78,12 @@ func TestService_Login(t *testing.T) {
 	assert.NoError(t, err)
 	claims, ok := parsedToken.Claims.(jwt.MapClaims)
 	assert.True(t, ok)
-	assert.Equal(t, "testuser", claims["sub"])
+	assert.Equal(t, "testuser", claims["username"])
+	assert.Equal(t, float64(1), claims["sub"])
 
 	// Verify refresh token in Redis
 	// storedToken, err := mockRedis.Get(ctx, "refresh:testuser").Result()
-	storedToken, err := mockRedis.HGetAll(ctx, refreshToken).Result()
+	storedToken, err := mockRedis.HGetAll(ctx, "refresh_token:"+refreshToken).Result()
 	assert.NoError(t, err)
 	assert.Equal(t, "testuser", storedToken["username"])
 
@@ -100,6 +102,7 @@ func TestService_Refresh(t *testing.T) {
 	// Set refresh token in Redis
 	refreshToken := "test-refresh-token"
 	redisClient.HSet(ctx, "refresh_token:"+refreshToken, map[string]interface{}{
+		"user_id":    1,
 		"username":   "testuser",
 		"expires_at": time.Now().Add(RefreshTokenTTL).Format(time.RFC3339),
 	})
@@ -116,7 +119,8 @@ func TestService_Refresh(t *testing.T) {
 	assert.NoError(t, err)
 	claims, ok := parsedToken.Claims.(jwt.MapClaims)
 	assert.True(t, ok)
-	assert.Equal(t, "testuser", claims["sub"])
+	assert.Equal(t, "testuser", claims["username"])
+	assert.Equal(t, float64(1), claims["sub"])
 
 	_, _, err = service.Refresh(context.Background(), "invalid-token")
 	assert.Error(t, err)

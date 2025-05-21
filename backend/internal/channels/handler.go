@@ -1,6 +1,8 @@
 package channels
 
 import (
+	"log"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -21,13 +23,17 @@ func (h *ChannelsHandler) CreateChannel(c *fiber.Ctx) error {
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request"})
 	}
+	if req.Name == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Channel name is required"})
+	}
 
-	username, ok := c.Locals("username").(string)
+	userID, ok := c.Locals("userID").(int32)
 	if !ok {
+		log.Printf("Invalid userID in Locals: %v (type: %T)", c.Locals("userID"), c.Locals("userID"))
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
 	}
 
-	channel, err := h.Service.CreateChannel(c.Context(), req.Name, username)
+	channel, err := h.Service.CreateChannel(c.Context(), req.Name, int64(userID))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to create channel"})
 	}

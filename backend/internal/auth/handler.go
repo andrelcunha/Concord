@@ -46,6 +46,9 @@ func (h *Handler) Login(c *fiber.Ctx) error {
 
 	accessToken, refreshToken, err := h.service.Login(c.Context(), req.Username, req.Password)
 	if err != nil {
+		if err == ErrInvalidCredentials {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
+		}
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": err.Error()})
 	}
 
