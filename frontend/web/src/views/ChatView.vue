@@ -120,4 +120,7 @@ onUnmounted(() => {
 .text-discord-blurple {
   color: #5865f2;
 }
+.message:hover {
+  background-color: #2f3136;
+}
 </style>

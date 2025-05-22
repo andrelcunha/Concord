@@ -9,7 +9,7 @@
         :class="{ 'bg-discord-selected text-white': $route.params.id == channel.ID }"
         @click="navigateToChannel(channel.ID)"
       >
-        # {{ channel.Name }}
+        <span class="mr-2">📢</span> # {{ channel.Name }}
       </li>
     </ul>
     <div>
