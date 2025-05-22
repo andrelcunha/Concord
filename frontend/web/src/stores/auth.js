@@ -34,7 +34,7 @@ export const useAuthStore = defineStore('auth', {
     },
     async refresh() {
       try {
-        const response = await api.post('/refresh', {
+        const response = await api.post(`${import.meta.env.VITE_API_URL}/refresh`, {
           refresh_token: this.refreshToken
         })
         console.log('Refresh response:', response.data)
