@@ -9,6 +9,7 @@ import (
 	"github.com/andrelcunha/Concord/backend/config"
 	"github.com/andrelcunha/Concord/backend/internal/auth"
 	"github.com/andrelcunha/Concord/backend/internal/channels"
+	"github.com/andrelcunha/Concord/backend/internal/messages"
 	"github.com/andrelcunha/Concord/backend/internal/middleware"
 	"github.com/andrelcunha/Concord/backend/internal/websocket"
 	"github.com/avast/retry-go/v4"
@@ -42,6 +43,10 @@ func main() {
 	// Initialize websocket service
 	websocketService := websocket.NewService(websocket.NewRepository(dbPool), redisClient)
 	websocket.RegisterWebSocketRoutes(api, websocketService)
+
+	// Initialize Message service
+	messageService := messages.NewService(messages.NewRepository(dbPool))
+	messages.RegisterMessageRoutes(api, messageService)
 
 	addCustom404Handler(app)
 	// Start server
