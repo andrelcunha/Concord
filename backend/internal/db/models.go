@@ -20,6 +20,7 @@ type Message struct {
 	ChannelID int32
 	UserID    int32
 	Content   string
+	Username  string
 	CreatedAt pgtype.Timestamptz
 }
 

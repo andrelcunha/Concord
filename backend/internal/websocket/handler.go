@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"sync"
 
+	. "github.com/andrelcunha/Concord/backend/internal/common"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
 )
@@ -43,6 +45,11 @@ func (h *Handler) HandleConnection(c *fiber.Ctx) error {
 	userID, ok := c.Locals("userID").(int32)
 	if !ok {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Unauthorized"})
+	}
+
+	username, ok := c.Locals("username").(string)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid username"})
 	}
 
 	return websocket.New(func(conn *websocket.Conn) {
@@ -98,13 +105,27 @@ func (h *Handler) HandleConnection(c *fiber.Ctx) error {
 				continue
 			}
 
-			dbMessage, err := h.service.StoreMessage(context.Background(), int32(channelID), userID, string(wsMsg.Content))
+			dbMessage, err := h.service.StoreMessage(context.Background(), int32(channelID), userID, string(wsMsg.Content), username)
 			if err != nil {
 				log.Printf("Error storing message: %v", err)
 				continue
 			}
 
-			if err := h.service.BroadcastMessage(context.Background(), int32(channelID), userID, dbMessage); err != nil {
+			messageResponse := MessageResponse{
+				ID:        dbMessage.ID,
+				ChannelID: dbMessage.ChannelID,
+				UserID:    dbMessage.UserID,
+				Content:   dbMessage.Content,
+				Username:  dbMessage.Username,
+				CreatedAt: dbMessage.CreatedAt.Time.Format("2006-01-02T15:04:05Z07:00"),
+			}
+			messageJSON, err := json.Marshal(messageResponse)
+			if err != nil {
+				log.Printf("Error marshaling message: %v", err)
+				continue
+			}
+
+			if err := h.service.BroadcastMessage(context.Background(), int32(channelID), userID, messageJSON); err != nil {
 				log.Printf("Error broadcasting message: %v", err)
 			}
 		}

@@ -10,32 +10,39 @@ import (
 )
 
 const createMessage = `-- name: CreateMessage :one
-INSERT INTO messages (channel_id, user_id, content)
-VALUES ($1, $2, $3)
-RETURNING id, channel_id, user_id, content, created_at
+INSERT INTO messages (channel_id, user_id, content, username)
+VALUES ($1, $2, $3, $4)
+RETURNING id, channel_id, user_id, content, username, created_at
 `
 
 type CreateMessageParams struct {
 	ChannelID int32
 	UserID    int32
 	Content   string
+	Username  string
 }
 
 func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) (Message, error) {
-	row := q.db.QueryRow(ctx, createMessage, arg.ChannelID, arg.UserID, arg.Content)
+	row := q.db.QueryRow(ctx, createMessage,
+		arg.ChannelID,
+		arg.UserID,
+		arg.Content,
+		arg.Username,
+	)
 	var i Message
 	err := row.Scan(
 		&i.ID,
 		&i.ChannelID,
 		&i.UserID,
 		&i.Content,
+		&i.Username,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const listMessagesByChannel = `-- name: ListMessagesByChannel :many
-SELECT id, channel_id, user_id, content, created_at
+SELECT id, channel_id, user_id, content, username, created_at
 FROM messages
 WHERE channel_id = $1
 ORDER BY created_at ASC
@@ -62,6 +69,7 @@ func (q *Queries) ListMessagesByChannel(ctx context.Context, arg ListMessagesByC
 			&i.ChannelID,
 			&i.UserID,
 			&i.Content,
+			&i.Username,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err

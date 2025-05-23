@@ -3,6 +3,7 @@ package messages
 import (
 	"strconv"
 
+	. "github.com/andrelcunha/Concord/backend/internal/common"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -20,11 +21,23 @@ func (h *MessageHandler) GetMessages(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid channel ID"})
 	}
 
-	messages, err := h.Service.ListMessagesByChannel(c.Context(), int32(channelID), 10, 0)
+	dbMessages, err := h.Service.ListMessagesByChannel(c.Context(), int32(channelID), 10, 0)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to get messages"})
 	}
-	return c.JSON(messages)
+
+	response := make([]MessageResponse, len(dbMessages))
+	for i, dbMessage := range dbMessages {
+		response[i] = MessageResponse{
+			ID:        dbMessage.ID,
+			ChannelID: dbMessage.ChannelID,
+			UserID:    dbMessage.UserID,
+			Content:   dbMessage.Content,
+			Username:  dbMessage.Username,
+			CreatedAt: dbMessage.CreatedAt.Time.Format("2006-01-02T15:04:05Z07:00"),
+		}
+	}
+	return c.JSON(response)
 }
 
 func RegisterMessageRoutes(api fiber.Router, service *Service) {

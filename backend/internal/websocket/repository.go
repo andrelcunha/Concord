@@ -12,7 +12,7 @@ type repository struct {
 }
 
 type Repository interface {
-	CreateMessage(ctx context.Context, channelID, userID int32, content string) (db.Message, error)
+	CreateMessage(ctx context.Context, channelID, userID int32, content, username string) (db.Message, error)
 	ListMessagesByChannel(ctx context.Context, channelID, limit, offset int32) ([]db.Message, error)
 }
 
@@ -23,11 +23,12 @@ func NewRepository(dbPool *pgxpool.Pool) Repository {
 	}
 }
 
-func (r *repository) CreateMessage(ctx context.Context, channelID int32, userID int32, content string) (db.Message, error) {
+func (r *repository) CreateMessage(ctx context.Context, channelID int32, userID int32, content, username string) (db.Message, error) {
 	message, err := r.db.CreateMessage(ctx, db.CreateMessageParams{
 		ChannelID: channelID,
 		UserID:    userID,
 		Content:   content,
+		Username:  username,
 	})
 	if err != nil {
 		return db.Message{}, err
