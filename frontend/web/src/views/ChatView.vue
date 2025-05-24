@@ -15,6 +15,27 @@ let ws = null
 
 const channelId = route.params.id
 
+// Random colors for fallback avatar
+const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEEAD', '#D4A5A5', '#9B59B6', '#3498DB']
+
+// Compute avatar style for fallback
+const getAvatarStyle = computed (() => (username) => {
+  const initial = username ? username[0].toUpperCase() : '?'
+  const color = colors[Math.floor(Math.random() * colors.length)]
+  return {
+    backgroundColor: color,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#fff',
+    fountweight: 'bold',
+    width: '32px',
+    height: '32px',
+    borderRadius: '50%',
+    fontSize: '16px',
+  }
+})
+
 async function fetchMessages() {
   isLoading.value = true
   try {
@@ -26,8 +47,9 @@ async function fetchMessages() {
       content: msg.content || msg.Content,
       username: msg.username || msg.Username,
       created_at: msg.created_at || msg.CreatedAt,
-      avatar_url: msg.avatar_url || 'https://example.com/default-avatar.png'
+      avatar_url: null
     }))
+
   } catch (error) {
     console.error('Fetch messages error:', error.response?.data || error.message)
   } finally {
@@ -53,7 +75,7 @@ function connectWebSocket() {
         content: message.content || message.Content,
         username: message.username || message.Username || 'Unknown',
         created_at: message.created_at || message.CreatedAt,
-        avatar_url: message.avatar_url || 'https://example.com/default-avatar.png'
+        avatar_url: message.avatar_url
       }
       if (!messages.value.some(m => m.id === normalizedMessage.id)) {
         messages.value.push(normalizedMessage)
@@ -102,7 +124,12 @@ onUnmounted(() => {
     <div v-if="isLoading" class="text-gray-400">Loading messages...</div>
     <div class="messages bg-discord-chat rounded p-4 mb-4 h-[calc(100vh-200px)] overflow-y-auto">
       <div v-for="message in messages" :key="message.id" class="message text-gray-200 mb-2 flex items-start">
-        <img :src="message.avatar_url" class="w-8 h-8 rounded-full mr-2" alt="User avatar" />
+        <div v-if="message.avatar_url" class="w-8 h-8 rounded-full mr-2">
+          <img :src="message.avatar_url" class="w-8 h-8 rounded-full mr-2" alt="User avatar" />
+        </div>
+        <div v-else class="w-8 h-8 rounded-full mr-2" :style="getAvatarStyle(message.username)">
+          {{ message.username[0] ? message.username[0].toUpperCase() : '?'}}
+        </div>
         <div>
           <span class="user text-discord-blurple font-bold">{{ message.username }}</span>
           <span class="timestamp text-gray-500 text-sm ml-2">{{ new Date(message.created_at).toLocaleTimeString() }}</span>
