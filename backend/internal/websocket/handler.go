@@ -59,41 +59,16 @@ func (h *Handler) HandleConnection(c *fiber.Ctx) error {
 	return websocket.New(func(conn *websocket.Conn) {
 		channelIDStr := fmt.Sprintf("%d", channelID)
 
-		h.ClientsMu.Lock()
-		if h.Clients[channelIDStr] == nil {
-			h.Clients[channelIDStr] = make(map[*websocket.Conn]bool)
-		}
-		h.Clients[channelIDStr][conn] = true
-		h.ClientsMu.Unlock()
+		h.addClient(channelIDStr, conn)
 
-		h.PubSubsMu.Lock()
-		if h.PubSubs[channelIDStr] == nil {
-			h.PubSubs[channelIDStr] = h.service.redis.Subscribe(context.Background(), "channel:"+channelIDStr)
-			go func(pubsub *redis.PubSub, channelIDStr string) {
-				for msg := range pubsub.Channel() {
-					h.ClientsMu.RLock()
-					for client := range h.Clients[channelIDStr] {
-						if err := client.WriteMessage(websocket.TextMessage, []byte(msg.Payload)); err != nil {
-							log.Printf("Error writing message: %v", err)
-						}
-					}
-					h.ClientsMu.RUnlock()
-				}
-			}(h.PubSubs[channelIDStr], channelIDStr)
-		}
-		h.PubSubsMu.Unlock()
+		h.setupPubSub(channelIDStr)
 
 		defer func() {
 			h.ClientsMu.Lock()
 			delete(h.Clients[channelIDStr], conn)
 			if len(h.Clients[channelIDStr]) == 0 {
 				delete(h.Clients, channelIDStr)
-				h.PubSubsMu.Lock()
-				if h.PubSubs[channelIDStr] != nil {
-					h.PubSubs[channelIDStr].Close()
-					delete(h.PubSubs, channelIDStr)
-				}
-				h.PubSubsMu.Unlock()
+				h.closePubSub(channelIDStr)
 			}
 			h.ClientsMu.Unlock()
 			conn.Close()
@@ -140,11 +115,49 @@ func (h *Handler) HandleConnection(c *fiber.Ctx) error {
 				log.Printf("Error broadcasting message: %v", err)
 			}
 		}
-
 	})(c)
 }
 
 func RegisterWebSocketRoutes(api fiber.Router, service *Service) {
 	handler := NewHandler(service)
 	api.Get("/ws", handler.HandleConnection)
+}
+
+func (h *Handler) handlePubSubMessages(pubsub *redis.PubSub, channelIDStr string) {
+	for msg := range pubsub.Channel() {
+		h.ClientsMu.RLock()
+		for client := range h.Clients[channelIDStr] {
+			if err := client.WriteMessage(websocket.TextMessage, []byte(msg.Payload)); err != nil {
+				log.Printf("Error writing message: %v", err)
+			}
+		}
+		h.ClientsMu.RUnlock()
+	}
+}
+
+func (h *Handler) setupPubSub(channelIDStr string) {
+	h.PubSubsMu.Lock()
+	if h.PubSubs[channelIDStr] == nil {
+		h.PubSubs[channelIDStr] = h.service.redis.Subscribe(context.Background(), "channel:"+channelIDStr)
+		go h.handlePubSubMessages(h.PubSubs[channelIDStr], channelIDStr)
+	}
+	h.PubSubsMu.Unlock()
+}
+
+func (h *Handler) closePubSub(channelIDStr string) {
+	h.PubSubsMu.Lock()
+	if h.PubSubs[channelIDStr] != nil {
+		h.PubSubs[channelIDStr].Close()
+		delete(h.PubSubs, channelIDStr)
+	}
+	h.PubSubsMu.Unlock()
+}
+
+func (h *Handler) addClient(channelIDStr string, conn *websocket.Conn) {
+	h.ClientsMu.Lock()
+	if h.Clients[channelIDStr] == nil {
+		h.Clients[channelIDStr] = make(map[*websocket.Conn]bool)
+	}
+	h.Clients[channelIDStr][conn] = true
+	h.ClientsMu.Unlock()
 }
