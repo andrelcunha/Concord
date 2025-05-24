@@ -29,4 +29,5 @@ type User struct {
 	Username  string
 	Password  string
 	CreatedAt pgtype.Timestamptz
+	AvatarUrl pgtype.Text
 }

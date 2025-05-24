@@ -45,8 +45,14 @@ func Auth(secret string) fiber.Handler {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid username"})
 		}
 
+		avatar_url, ok := claims["avatar_url"].(string)
+		if !ok {
+			avatar_url = ""
+		}
+
 		c.Locals("userID", int32(userID))
 		c.Locals("username", username)
+		c.Locals("avatar_url", avatar_url)
 		return c.Next()
 	}
 }

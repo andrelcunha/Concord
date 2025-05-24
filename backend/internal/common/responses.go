@@ -7,4 +7,5 @@ type MessageResponse struct {
 	Content   string `json:"content"`
 	Username  string `json:"username"`
 	CreatedAt string `json:"created_at"`
+	AvatarURL string `json:"avatar_url"`
 }

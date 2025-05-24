@@ -7,6 +7,8 @@ package db
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createMessage = `-- name: CreateMessage :one
@@ -42,10 +44,18 @@ func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) (M
 }
 
 const listMessagesByChannel = `-- name: ListMessagesByChannel :many
-SELECT id, channel_id, user_id, content, username, created_at
-FROM messages
-WHERE channel_id = $1
-ORDER BY created_at ASC
+SELECT 
+    m.id, 
+    m.channel_id, 
+    m.user_id, 
+    m.content, 
+    m.username, 
+    m.created_at,
+    COALESCE(u.avatar_url, 'https://example.com/default-avatar.png') AS avatar_url
+FROM messages m
+LEFT JOIN users u ON m.user_id = u.id
+WHERE m.channel_id = $1
+ORDER BY m.created_at ASC
 LIMIT $2 OFFSET $3
 `
 
@@ -55,15 +65,25 @@ type ListMessagesByChannelParams struct {
 	Offset    int32
 }
 
-func (q *Queries) ListMessagesByChannel(ctx context.Context, arg ListMessagesByChannelParams) ([]Message, error) {
+type ListMessagesByChannelRow struct {
+	ID        int32
+	ChannelID int32
+	UserID    int32
+	Content   string
+	Username  string
+	CreatedAt pgtype.Timestamptz
+	AvatarUrl string
+}
+
+func (q *Queries) ListMessagesByChannel(ctx context.Context, arg ListMessagesByChannelParams) ([]ListMessagesByChannelRow, error) {
 	rows, err := q.db.Query(ctx, listMessagesByChannel, arg.ChannelID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Message
+	var items []ListMessagesByChannelRow
 	for rows.Next() {
-		var i Message
+		var i ListMessagesByChannelRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.ChannelID,
@@ -71,6 +91,7 @@ func (q *Queries) ListMessagesByChannel(ctx context.Context, arg ListMessagesByC
 			&i.Content,
 			&i.Username,
 			&i.CreatedAt,
+			&i.AvatarUrl,
 		); err != nil {
 			return nil, err
 		}

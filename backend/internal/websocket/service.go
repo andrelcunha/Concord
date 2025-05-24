@@ -30,7 +30,7 @@ func (s *Service) StoreMessage(ctx context.Context, channelID, userID int32, con
 	return message, nil
 }
 
-func (s *Service) ListMessagesByChannel(ctx context.Context, channelID, limit, offset int32) ([]db.Message, error) {
+func (s *Service) ListMessagesByChannel(ctx context.Context, channelID, limit, offset int32) ([]db.ListMessagesByChannelRow, error) {
 	messages, err := s.repo.ListMessagesByChannel(ctx, channelID, limit, offset)
 	if err != nil {
 		log.Printf("ListMessagesByChannel error: %v", err)

@@ -56,6 +56,11 @@ func (h *Handler) HandleConnection(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid username"})
 	}
 
+	avatar_url, ok := c.Locals("avatar_url").(string)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid avatar_url"})
+	}
+
 	return websocket.New(func(conn *websocket.Conn) {
 		channelIDStr := fmt.Sprintf("%d", channelID)
 
@@ -104,6 +109,7 @@ func (h *Handler) HandleConnection(c *fiber.Ctx) error {
 				Content:   dbMessage.Content,
 				Username:  dbMessage.Username,
 				CreatedAt: dbMessage.CreatedAt.Time.Format("2006-01-02T15:04:05Z07:00"),
+				AvatarURL: avatar_url,
 			}
 			messageJSON, err := json.Marshal(messageResponse)
 			if err != nil {

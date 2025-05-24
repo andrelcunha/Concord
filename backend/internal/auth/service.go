@@ -88,6 +88,7 @@ func (s *Service) Login(ctx context.Context, username, password string) (string,
 	err = s.redis.HSet(ctx, redisKey, map[string]interface{}{
 		"user_id":    user.UserId,
 		"username":   user.Username,
+		"avatar_url": user.AvatarUrl,
 		"expires_at": time.Now().Add(RefreshTokenTTL).Format(time.RFC3339),
 	}).Err()
 	if err != nil {

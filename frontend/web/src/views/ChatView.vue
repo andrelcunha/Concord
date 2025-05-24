@@ -18,7 +18,15 @@ async function fetchMessages() {
   isLoading.value = true
   try {
     const response = await axios.get(`/api/channels/${channelId}/messages`)
-    messages.value = response.data
+    messages.value = response.data.map(msg => ({
+      id: msg.ID || msg.ID,
+      channel_id: msg.channel_id || msg.ChannelID,
+      user_id: msg.user_id || msg.UserID,
+      content: msg.content || msg.Content,
+      username: msg.username || msg.Username,
+      created_at: msg.created_at || msg.CreatedAt,
+      avatar_url: msg.avatar_url || 'https://example.com/default-avatar.png'
+    }))
   } catch (error) {
     console.error('Fetch messages error:', error.response?.data || error.message)
   } finally {
@@ -37,19 +45,22 @@ function connectWebSocket() {
   ws.onmessage = (event) => {
     try {
       const message = JSON.parse(event.data)
-      messages.value.push({
-        id: message.id || message.message.ID,
-        channelId: message.channel_id,
-        user_id: message.user_id,
-        content: message.content,
-        username: message.username,
-        created_at: message.created_at,
-      })
+      const normalizedMessage = {
+        id: message.id || message.ID,
+        channel_id: message.channel_id || message.ChannelID,
+        user_id: message.user_id || message.UserID,
+        content: message.content || message.Content,
+        username: message.username || message.Username || 'Unknown',
+        created_at: message.created_at || message.CreatedAt,
+        avatar_url: message.avatar_url || 'https://example.com/default-avatar.png'
+      }
+      if (!messages.value.some(m => m.id === normalizedMessage.id)) {
+        messages.value.push(normalizedMessage)
+      }
     } catch (error) {
       console.error('WebSocket message error:', error)
     }
   }
-
   ws.onclose = () => {
     console.log('WebSocket closed')
   }
@@ -89,10 +100,13 @@ onUnmounted(() => {
     <h2 class="text-white text-xl mb-4">Channel #{{ channelId }}</h2>
     <div v-if="isLoading" class="text-gray-400">Loading messages...</div>
     <div class="messages bg-discord-chat rounded p-4 mb-4 h-[calc(100vh-200px)] overflow-y-auto">
-      <div v-for="message in messages" :key="message.id" class="message text-gray-200 mb-2">
-        <span class="user text-discord-blurple font-bold">{{ message.username }}</span>
-        <span class="timestamp text-gray-500 text-sm ml-2">{{ new Date(message.created_at).toLocaleTimeString() }}</span>
-        <div>{{ message.content }}</div>
+      <div v-for="message in messages" :key="message.id" class="message text-gray-200 items-start">
+        <img :src="message.avatar_url" class="w-8 h-8 rounded-full mr-2" alt="User avatar" />
+        <div>
+          <span class="user text-discord-blurple font-bold">{{ message.username }}</span>
+          <span class="timestamp text-gray-500 text-sm ml-2">{{ new Date(message.created_at).toLocaleTimeString() }}</span>
+            <div>{{ message.content }}</div>
+        </div>
       </div>
     </div>
     <form @submit.prevent="sendMessage" class="flex">
