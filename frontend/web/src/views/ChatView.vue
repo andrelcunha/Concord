@@ -37,7 +37,14 @@ function connectWebSocket() {
   ws.onmessage = (event) => {
     try {
       const message = JSON.parse(event.data)
-      messages.value.push(message)
+      messages.value.push({
+        id: message.id || message.message.ID,
+        channelId: message.channel_id,
+        user_id: message.user_id,
+        content: message.content,
+        username: message.username,
+        created_at: message.created_at,
+      })
     } catch (error) {
       console.error('WebSocket message error:', error)
     }

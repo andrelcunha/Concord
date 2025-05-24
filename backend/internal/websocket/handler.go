@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	. "github.com/andrelcunha/Concord/backend/internal/common"
+	"github.com/redis/go-redis/v9"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
@@ -18,6 +19,8 @@ type Handler struct {
 	service   *Service
 	Clients   map[string]map[*websocket.Conn]bool
 	ClientsMu sync.RWMutex
+	PubSubs   map[string]*redis.PubSub
+	PubSubsMu sync.RWMutex
 }
 
 type WSMessage struct {
@@ -28,6 +31,7 @@ func NewHandler(service *Service) *Handler {
 	return &Handler{
 		service: service,
 		Clients: make(map[string]map[*websocket.Conn]bool),
+		PubSubs: make(map[string]*redis.PubSub),
 	}
 }
 
@@ -62,30 +66,37 @@ func (h *Handler) HandleConnection(c *fiber.Ctx) error {
 		h.Clients[channelIDStr][conn] = true
 		h.ClientsMu.Unlock()
 
+		h.PubSubsMu.Lock()
+		if h.PubSubs[channelIDStr] == nil {
+			h.PubSubs[channelIDStr] = h.service.redis.Subscribe(context.Background(), "channel:"+channelIDStr)
+			go func(pubsub *redis.PubSub, channelIDStr string) {
+				for msg := range pubsub.Channel() {
+					h.ClientsMu.RLock()
+					for client := range h.Clients[channelIDStr] {
+						if err := client.WriteMessage(websocket.TextMessage, []byte(msg.Payload)); err != nil {
+							log.Printf("Error writing message: %v", err)
+						}
+					}
+					h.ClientsMu.RUnlock()
+				}
+			}(h.PubSubs[channelIDStr], channelIDStr)
+		}
+		h.PubSubsMu.Unlock()
+
 		defer func() {
 			h.ClientsMu.Lock()
 			delete(h.Clients[channelIDStr], conn)
 			if len(h.Clients[channelIDStr]) == 0 {
 				delete(h.Clients, channelIDStr)
+				h.PubSubsMu.Lock()
+				if h.PubSubs[channelIDStr] != nil {
+					h.PubSubs[channelIDStr].Close()
+					delete(h.PubSubs, channelIDStr)
+				}
+				h.PubSubsMu.Unlock()
 			}
 			h.ClientsMu.Unlock()
 			conn.Close()
-		}()
-
-		pubsub := h.service.redis.Subscribe(context.Background(), "channel:"+channelIDStr)
-		defer pubsub.Close()
-
-		go func() {
-			for msg := range pubsub.Channel() {
-				h.ClientsMu.RLock()
-				for client := range h.Clients[channelIDStr] {
-					if err := client.WriteMessage(websocket.TextMessage, []byte(msg.Payload)); err != nil {
-						log.Printf("Error writing message: %v", err)
-
-					}
-				}
-				h.ClientsMu.RUnlock()
-			}
 		}()
 
 		for {
