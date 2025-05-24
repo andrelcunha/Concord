@@ -4,12 +4,11 @@
     <ul class="space-y-2 flex-1 overflow-y-auto">
       <li
         v-for="channel in channels"
-        :key="channel.ID"
+        :key="channel.id"
         class="text-gray-300 hover:text-white hover:bg-discord-hover p-2 rounded cursor-pointer"
-        :class="{ 'bg-discord-selected text-white': $route.params.id == channel.ID }"
-        @click="navigateToChannel(channel.ID)"
+        @click="navigateToChannel(channel)"
       >
-        <span class="mr-2">📢</span> # {{ channel.Name }}
+        <span class="mr-2">#</span>{{ channel.name }}
       </li>
     </ul>
     <div>
@@ -38,12 +37,11 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 import api from '@/api/axios'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
-const route = useRoute()
 const authStore = useAuthStore()
 const channels = ref([])
 const showForm = ref(false)
@@ -52,9 +50,12 @@ const newChannelName = ref('')
 const fetchChannels = async () => {
   try {
     const response = await api.get('/api/channels')    
-    channels.value = response.data
+    channels.value = response.data.map(channel => ({
+      id: channel.id || channel.ID,
+      name: channel.name || channel.Name || `Channel #${channel.id}`,
+    }))   
   } catch (err) {
-    console.error('Failed to fetch channels:', err)
+    console.error('Failed to fetch channels:', err.response?.data || err.message)
   }
 }
 
@@ -69,8 +70,11 @@ const createChannel = async () => {
   }
 }
 
-const navigateToChannel = (channelId) => {
-  router.push(`/channels/${channelId}`)
+const navigateToChannel = (channel) => {
+  router.push({
+    path: `/channels/${channel.id}`,
+    query: { name: channel.name }
+  })
 }
 
 onMounted(() => {

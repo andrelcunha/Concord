@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import axios from '@/api/axios'
@@ -10,6 +10,7 @@ const authStore = useAuthStore()
 const messages = ref([])
 const content = ref('')
 const isLoading = ref(false)
+const channelName = computed(() => route.query.name || `${route.params.id}`)
 let ws = null
 
 const channelId = route.params.id
@@ -97,10 +98,10 @@ onUnmounted(() => {
 
 <template>
   <div class="chat flex-1 p-6">
-    <h2 class="text-white text-xl mb-4">Channel #{{ channelId }}</h2>
+    <h2 class="text-white text-xl mb-4">Channel #{{ channelName }}</h2>
     <div v-if="isLoading" class="text-gray-400">Loading messages...</div>
     <div class="messages bg-discord-chat rounded p-4 mb-4 h-[calc(100vh-200px)] overflow-y-auto">
-      <div v-for="message in messages" :key="message.id" class="message text-gray-200 items-start">
+      <div v-for="message in messages" :key="message.id" class="message text-gray-200 mb-2 flex items-start">
         <img :src="message.avatar_url" class="w-8 h-8 rounded-full mr-2" alt="User avatar" />
         <div>
           <span class="user text-discord-blurple font-bold">{{ message.username }}</span>
@@ -113,7 +114,7 @@ onUnmounted(() => {
       <input
         v-model="content"
         class="flex-1 p-2 bg-discord-input text-white rounded-l-md focus:outline-none"
-        placeholder="Type a message..."
+        :placeholder="'Message # ' + channelName"
       />
       <button
         type="submit"
