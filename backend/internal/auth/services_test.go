@@ -47,11 +47,13 @@ func TestService_Register(t *testing.T) {
 }
 
 func TestService_Login(t *testing.T) {
+	ctx := context.Background()
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 	mockRepo := &mockRepository{
 		getUserFunc: func(ctx context.Context, username string) (*models.User, error) {
 			if username == "testuser" {
 				return &models.User{
+					UserId:   1,
 					Username: "testuser",
 					Password: string(hashedPassword),
 				}, nil
@@ -64,7 +66,7 @@ func TestService_Login(t *testing.T) {
 	mockRedis := redis.NewClient(&redis.Options{Addr: mr.Addr()})
 	service := NewService(mockRepo, mockRedis, secret)
 
-	accessToken, refreshToken, err := service.Login(context.Background(), "testuser", "password123")
+	accessToken, refreshToken, err := service.Login(ctx, "testuser", "password123")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, accessToken)
 	assert.NotEmpty(t, refreshToken)
@@ -76,29 +78,38 @@ func TestService_Login(t *testing.T) {
 	assert.NoError(t, err)
 	claims, ok := parsedToken.Claims.(jwt.MapClaims)
 	assert.True(t, ok)
-	assert.Equal(t, "testuser", claims["sub"])
+	assert.Equal(t, "testuser", claims["username"])
+	assert.Equal(t, float64(1), claims["sub"])
 
 	// Verify refresh token in Redis
-	storedToken, err := mockRedis.Get(context.Background(), "refresh:testuser").Result()
+	// storedToken, err := mockRedis.Get(ctx, "refresh:testuser").Result()
+	storedToken, err := mockRedis.HGetAll(ctx, "refresh_token:"+refreshToken).Result()
 	assert.NoError(t, err)
-	assert.Equal(t, refreshToken, storedToken)
+	assert.Equal(t, "testuser", storedToken["username"])
 
-	_, _, err = service.Login(context.Background(), "testuser", "wrongpassword")
+	_, _, err = service.Login(ctx, "testuser", "wrongpassword")
 	assert.Error(t, err)
 }
 
 func TestService_Refresh(t *testing.T) {
+	ctx := context.Background()
 	secret := "testsecret"
 	repo := &mockRepository{}
-	redisClient := redis.NewClient(&redis.Options{})
+	mr, _ := miniredis.Run()
+	redisClient := redis.NewClient(&redis.Options{Addr: mr.Addr()})
 	service := NewService(repo, redisClient, secret)
 
 	// Set refresh token in Redis
 	refreshToken := "test-refresh-token"
-	redisClient.Set(context.Background(), "refresh:testuser", refreshToken, 7*24*time.Hour)
+	redisClient.HSet(ctx, "refresh_token:"+refreshToken, map[string]interface{}{
+		"user_id":    1,
+		"username":   "testuser",
+		"expires_at": time.Now().Add(RefreshTokenTTL).Format(time.RFC3339),
+	})
 
-	accessToken, err := service.Refresh(context.Background(), "testuser", refreshToken)
+	accessToken, newRefreshToken, err := service.Refresh(context.Background(), refreshToken)
 	assert.NoError(t, err)
+	assert.NotEmpty(t, newRefreshToken)
 	assert.NotEmpty(t, accessToken)
 
 	// Verify new JWT
@@ -108,8 +119,9 @@ func TestService_Refresh(t *testing.T) {
 	assert.NoError(t, err)
 	claims, ok := parsedToken.Claims.(jwt.MapClaims)
 	assert.True(t, ok)
-	assert.Equal(t, "testuser", claims["sub"])
+	assert.Equal(t, "testuser", claims["username"])
+	assert.Equal(t, float64(1), claims["sub"])
 
-	_, err = service.Refresh(context.Background(), "testuser", "invalid-token")
+	_, _, err = service.Refresh(context.Background(), "invalid-token")
 	assert.Error(t, err)
 }

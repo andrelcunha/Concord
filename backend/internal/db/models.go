@@ -8,6 +8,22 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Channel struct {
+	ID        int32
+	Name      string
+	CreatedBy pgtype.Int4
+	CreatedAt pgtype.Timestamptz
+}
+
+type Message struct {
+	ID        int32
+	ChannelID int32
+	UserID    int32
+	Content   string
+	Username  string
+	CreatedAt pgtype.Timestamptz
+}
+
 type User struct {
 	ID        int32
 	Username  string
