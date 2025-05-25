@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	"github.com/andrelcunha/Concord/backend/internal/db"
+	"github.com/andrelcunha/Concord/backend/pkg/dtos"
 )
 
 type Service struct {
@@ -17,7 +17,7 @@ func NewService(repo Repository) *Service {
 	}
 }
 
-func (s *Service) ListMessagesByChannel(ctx context.Context, channelID, limit, offset int32) ([]db.ListMessagesByChannelRow, error) {
+func (s *Service) ListMessagesByChannel(ctx context.Context, channelID, limit, offset int32) ([]dtos.MessageDto, error) {
 	messages, err := s.repo.ListMessagesByChannel(ctx, channelID, limit, offset)
 	if err != nil {
 		log.Printf("ListMessagesByChannel error: %v", err)

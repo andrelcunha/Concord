@@ -15,41 +15,20 @@ let ws = null
 
 const channelId = route.params.id
 
-// Random colors for fallback avatar
-const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEEAD', '#D4A5A5', '#9B59B6', '#3498DB']
-
-// Compute avatar style for fallback
-const getAvatarStyle = computed (() => (username) => {
-  const initial = username ? username[0].toUpperCase() : '?'
-  const color = colors[Math.floor(Math.random() * colors.length)]
-  return {
-    backgroundColor: color,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#fff',
-    fountweight: 'bold',
-    width: '32px',
-    height: '32px',
-    borderRadius: '50%',
-    fontSize: '16px',
-  }
-})
-
 async function fetchMessages() {
   isLoading.value = true
   try {
     const response = await axios.get(`/api/channels/${channelId}/messages`)
     messages.value = response.data.map(msg => ({
-      id: msg.ID || msg.ID,
+      id: msg.id || msg.ID,
       channel_id: msg.channel_id || msg.ChannelID,
       user_id: msg.user_id || msg.UserID,
       content: msg.content || msg.Content,
-      username: msg.username || msg.Username,
+      username: msg.username || msg.Username || 'Unknown',
       created_at: msg.created_at || msg.CreatedAt,
-      avatar_url: null
+      avatar_url: msg.avatar_url || msg.AvatarURL,
+      avatar_color: msg.avatar_color || msg.AvatarColor || '#FF6B6B',
     }))
-
   } catch (error) {
     console.error('Fetch messages error:', error.response?.data || error.message)
   } finally {
@@ -75,7 +54,8 @@ function connectWebSocket() {
         content: message.content || message.Content,
         username: message.username || message.Username || 'Unknown',
         created_at: message.created_at || message.CreatedAt,
-        avatar_url: message.avatar_url
+        avatar_url: message.avatar_url || message.AvatarURL || null,
+        avatar_color: message.avatar_color || message.AvatarColor || '#FF6B6B',
       }
       if (!messages.value.some(m => m.id === normalizedMessage.id)) {
         messages.value.push(normalizedMessage)
@@ -127,7 +107,8 @@ onUnmounted(() => {
         <div v-if="message.avatar_url" class="w-8 h-8 rounded-full mr-2">
           <img :src="message.avatar_url" class="w-8 h-8 rounded-full mr-2" alt="User avatar" />
         </div>
-        <div v-else class="w-8 h-8 rounded-full mr-2" :style="getAvatarStyle(message.username)">
+        <div v-else class="w-8 h-8 rounded-full mr-2"
+        :style="{ backgroundColor: message.avatar_color}">
           {{ message.username[0] ? message.username[0].toUpperCase() : '?'}}
         </div>
         <div>

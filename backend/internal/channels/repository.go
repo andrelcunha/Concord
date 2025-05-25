@@ -15,7 +15,6 @@ type repository struct {
 type Repository interface {
 	CreateChannel(ctx context.Context, name string, userID int64) (db.Channel, error)
 	ListChannels(ctx context.Context) ([]db.Channel, error)
-	GetUserIDByUsername(ctx context.Context, username string) (int64, error)
 }
 
 func NewRepository(dbPool *pgxpool.Pool) Repository {
@@ -34,13 +33,4 @@ func (r *repository) CreateChannel(ctx context.Context, name string, userID int6
 // Implement ListChannels method
 func (r *repository) ListChannels(ctx context.Context) ([]db.Channel, error) {
 	return r.db.ListChannels(ctx)
-}
-
-// Implement GetUserIDByUsername method
-func (r *repository) GetUserIDByUsername(ctx context.Context, username string) (int64, error) {
-	userID, err := r.db.GetUserIDByUsername(ctx, username)
-	if err != nil {
-		return 0, err
-	}
-	return int64(userID), nil
 }

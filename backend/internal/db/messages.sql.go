@@ -12,32 +12,25 @@ import (
 )
 
 const createMessage = `-- name: CreateMessage :one
-INSERT INTO messages (channel_id, user_id, content, username)
-VALUES ($1, $2, $3, $4)
-RETURNING id, channel_id, user_id, content, username, created_at
+INSERT INTO messages (channel_id, user_id, content)
+VALUES ($1, $2, $3)
+RETURNING id, channel_id, user_id, content, created_at
 `
 
 type CreateMessageParams struct {
 	ChannelID int32
 	UserID    int32
 	Content   string
-	Username  string
 }
 
 func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) (Message, error) {
-	row := q.db.QueryRow(ctx, createMessage,
-		arg.ChannelID,
-		arg.UserID,
-		arg.Content,
-		arg.Username,
-	)
+	row := q.db.QueryRow(ctx, createMessage, arg.ChannelID, arg.UserID, arg.Content)
 	var i Message
 	err := row.Scan(
 		&i.ID,
 		&i.ChannelID,
 		&i.UserID,
 		&i.Content,
-		&i.Username,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -49,9 +42,10 @@ SELECT
     m.channel_id, 
     m.user_id, 
     m.content, 
-    m.username, 
+    u.username AS username, 
     m.created_at,
-    COALESCE(u.avatar_url, 'https://example.com/default-avatar.png') AS avatar_url
+    u.avatar_url AS avatar_url,
+    u.avatar_color AS avatar_color
 FROM messages m
 LEFT JOIN users u ON m.user_id = u.id
 WHERE m.channel_id = $1
@@ -66,13 +60,14 @@ type ListMessagesByChannelParams struct {
 }
 
 type ListMessagesByChannelRow struct {
-	ID        int32
-	ChannelID int32
-	UserID    int32
-	Content   string
-	Username  string
-	CreatedAt pgtype.Timestamptz
-	AvatarUrl string
+	ID          int32
+	ChannelID   int32
+	UserID      int32
+	Content     string
+	Username    pgtype.Text
+	CreatedAt   pgtype.Timestamptz
+	AvatarUrl   pgtype.Text
+	AvatarColor pgtype.Text
 }
 
 func (q *Queries) ListMessagesByChannel(ctx context.Context, arg ListMessagesByChannelParams) ([]ListMessagesByChannelRow, error) {
@@ -92,6 +87,7 @@ func (q *Queries) ListMessagesByChannel(ctx context.Context, arg ListMessagesByC
 			&i.Username,
 			&i.CreatedAt,
 			&i.AvatarUrl,
+			&i.AvatarColor,
 		); err != nil {
 			return nil, err
 		}

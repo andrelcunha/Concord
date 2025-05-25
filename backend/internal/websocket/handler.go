@@ -53,12 +53,23 @@ func (h *Handler) HandleConnection(c *fiber.Ctx) error {
 
 	username, ok := c.Locals("username").(string)
 	if !ok {
+
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid username"})
 	}
+
+	// userDto, ok := c.Locals("user").(*dtos.UserDto)
+	// if !ok {
+	// 	log.Printf("unable to get user from context")
+	// 	return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid user"})
+	// }
 
 	avatar_url, ok := c.Locals("avatar_url").(string)
 	if !ok {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid avatar_url"})
+	}
+	avatar_color, ok := c.Locals("avatar_color").(string)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid avatar_color"})
 	}
 
 	return websocket.New(func(conn *websocket.Conn) {
@@ -103,13 +114,14 @@ func (h *Handler) HandleConnection(c *fiber.Ctx) error {
 			}
 
 			messageResponse := MessageResponse{
-				ID:        dbMessage.ID,
-				ChannelID: dbMessage.ChannelID,
-				UserID:    dbMessage.UserID,
-				Content:   dbMessage.Content,
-				Username:  dbMessage.Username,
-				CreatedAt: dbMessage.CreatedAt.Time.Format("2006-01-02T15:04:05Z07:00"),
-				AvatarURL: avatar_url,
+				ID:          dbMessage.ID,
+				ChannelID:   dbMessage.ChannelID,
+				UserID:      dbMessage.UserID,
+				Content:     dbMessage.Content,
+				Username:    username,
+				CreatedAt:   dbMessage.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+				AvatarURL:   avatar_url,
+				AvatarColor: avatar_color,
 			}
 			messageJSON, err := json.Marshal(messageResponse)
 			if err != nil {

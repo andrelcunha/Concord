@@ -41,11 +41,12 @@ func main() {
 	channels.RegisterChannelsRoutes(api, channelsService)
 
 	// Initialize websocket service
-	websocketService := websocket.NewService(websocket.NewRepository(dbPool), redisClient)
+	msgRepo := messages.NewRepository(dbPool)
+	websocketService := websocket.NewService(msgRepo, redisClient)
 	websocket.RegisterWebSocketRoutes(api, websocketService)
 
 	// Initialize Message service
-	messageService := messages.NewService(messages.NewRepository(dbPool))
+	messageService := messages.NewService(msgRepo)
 	messages.RegisterMessageRoutes(api, messageService)
 
 	addCustom404Handler(app)

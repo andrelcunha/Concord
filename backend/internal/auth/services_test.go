@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/alicebob/miniredis/v2"
-	"github.com/andrelcunha/Concord/backend/pkg/models"
+	"github.com/andrelcunha/Concord/backend/pkg/dtos"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
@@ -15,24 +15,28 @@ import (
 )
 
 type mockRepository struct {
-	createUserFunc func(ctx context.Context, user *models.User) error
-	getUserFunc    func(ctx context.Context, username string) (*models.User, error)
+	createUserFunc  func(ctx context.Context, user *dtos.UserDto) (*dtos.UserDto, error)
+	getUserFunc     func(ctx context.Context, username string) (*dtos.UserDto, error)
+	getUserByIDFunc func(ctx context.Context, userID int32) (*dtos.UserDto, error)
 }
 
-func (m *mockRepository) CreateUser(ctx context.Context, user *models.User) error {
+func (m *mockRepository) CreateUser(ctx context.Context, user *dtos.UserDto) (*dtos.UserDto, error) {
 	return m.createUserFunc(ctx, user)
 }
 
-func (m *mockRepository) GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
+func (m *mockRepository) GetUserByUsername(ctx context.Context, username string) (*dtos.UserDto, error) {
 	return m.getUserFunc(ctx, username)
+}
+
+func (m *mockRepository) GetUserByID(ctx context.Context, userID int32) (*dtos.UserDto, error) {
+	return m.getUserByIDFunc(ctx, userID)
 }
 
 func TestService_Register(t *testing.T) {
 	mockRepo := &mockRepository{
-		createUserFunc: func(ctx context.Context, user *models.User) error {
-			return nil
-		},
-	}
+		createUserFunc: func(ctx context.Context, user *dtos.UserDto) (*dtos.UserDto, error) {
+			return nil, nil
+		}}
 	// Arrange
 	mockRedis := redis.NewClient(&redis.Options{})
 	service := NewService(mockRepo, mockRedis, "testsecret")
@@ -50,9 +54,9 @@ func TestService_Login(t *testing.T) {
 	ctx := context.Background()
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 	mockRepo := &mockRepository{
-		getUserFunc: func(ctx context.Context, username string) (*models.User, error) {
+		getUserFunc: func(ctx context.Context, username string) (*dtos.UserDto, error) {
 			if username == "testuser" {
-				return &models.User{
+				return &dtos.UserDto{
 					UserId:   1,
 					Username: "testuser",
 					Password: string(hashedPassword),
@@ -94,10 +98,10 @@ func TestService_Login(t *testing.T) {
 func TestService_Refresh(t *testing.T) {
 	ctx := context.Background()
 	secret := "testsecret"
-	repo := &mockRepository{}
+	mockRepo := &mockRepository{}
 	mr, _ := miniredis.Run()
 	redisClient := redis.NewClient(&redis.Options{Addr: mr.Addr()})
-	service := NewService(repo, redisClient, secret)
+	service := NewService(mockRepo, redisClient, secret)
 
 	// Set refresh token in Redis
 	refreshToken := "test-refresh-token"

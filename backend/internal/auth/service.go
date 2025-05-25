@@ -4,11 +4,13 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
+	mathrand "math/rand"
 	"strconv"
 	"time"
 
-	"github.com/andrelcunha/Concord/backend/pkg/models"
+	"github.com/andrelcunha/Concord/backend/pkg/dtos"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/redis/go-redis/v9"
 	"golang.org/x/crypto/bcrypt"
@@ -40,41 +42,36 @@ func NewService(repo Repository, redis *redis.Client, secret string) *Service {
 	}
 }
 
-func (s *Service) Register(ctx context.Context, username, password string) (*models.User, error) {
+func (s *Service) Register(ctx context.Context, username, password string) (*dtos.UserDto, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, err
 	}
 
-	user := &models.User{
-		Username: username,
-		Password: string(hashedPassword),
+	user := &dtos.UserDto{
+		Username:    username,
+		Password:    string(hashedPassword),
+		AvatarColor: getRandomColor(),
 	}
-	if err := s.repo.CreateUser(ctx, user); err != nil {
-		return nil, err
-	}
-	user, err = s.repo.GetUserByUsername(ctx, username)
+	newUser, err := s.repo.CreateUser(ctx, user)
 	if err != nil {
 		return nil, err
 	}
 
-	return user, nil
+	return newUser, nil
 }
 
 func (s *Service) Login(ctx context.Context, username, password string) (string, string, error) {
-	user, err := s.repo.GetUserByUsername(ctx, username)
+	userID, ok, err := authUser(ctx, s, username, password)
+	if !ok {
+		return "", "", err
+	}
+	user, err := s.repo.GetUserByID(ctx, userID)
 	if err != nil {
-		if err.Error() == "no rows in result set" {
-			return "", "", ErrInvalidCredentials
-		}
-		return "", "", ErrInvalidCredentials
+		return "", "", err
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
-		return "", "", errors.New("invalid credentials")
-	}
-
-	accesToken, err := s.generateAccessToken(int32(user.UserId), user.Username)
+	accesToken, err := s.generateAccessToken(user)
 	if err != nil {
 		return "", "", err
 	}
@@ -86,10 +83,11 @@ func (s *Service) Login(ctx context.Context, username, password string) (string,
 
 	redisKey := "refresh_token:" + refreshToken
 	err = s.redis.HSet(ctx, redisKey, map[string]interface{}{
-		"user_id":    user.UserId,
-		"username":   user.Username,
-		"avatar_url": user.AvatarUrl,
-		"expires_at": time.Now().Add(RefreshTokenTTL).Format(time.RFC3339),
+		"user_id":      user.UserId,
+		"username":     user.Username,
+		"avatar_url":   user.AvatarUrl,
+		"avatar_color": user.AvatarColor,
+		"expires_at":   time.Now().Add(RefreshTokenTTL).Format(time.RFC3339),
 	}).Err()
 	if err != nil {
 		return "", "", err
@@ -97,6 +95,21 @@ func (s *Service) Login(ctx context.Context, username, password string) (string,
 	s.redis.Expire(ctx, redisKey, RefreshTokenTTL)
 
 	return accesToken, refreshToken, nil
+}
+
+func authUser(ctx context.Context, s *Service, username string, password string) (int32, bool, error) {
+	user, err := s.repo.GetUserByUsername(ctx, username)
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			return 0, false, ErrInvalidCredentials
+		}
+		return 0, false, ErrInvalidCredentials
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+		return 0, false, errors.New("invalid credentials")
+	}
+	return user.UserId, true, nil
 }
 
 func (s *Service) Refresh(ctx context.Context, refreshToken string) (string, string, error) {
@@ -133,8 +146,14 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (string, str
 		return "", "", err
 	}
 
+	// get user from DB
+	user, err := s.repo.GetUserByID(ctx, int32(userID))
+	if err != nil {
+		return "", "", err
+	}
+
 	// Generate a new access token
-	accessToken, err := s.generateAccessToken(int32(userID), username)
+	accessToken, err := s.generateAccessToken(user)
 	if err != nil {
 		return "", "", err
 	}
@@ -148,9 +167,11 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (string, str
 	// Store new refresh token in Redis
 	newRedisKey := "refresh_token:" + newRefreshToken
 	err = s.redis.HSet(ctx, newRedisKey, map[string]interface{}{
-		"user_id":    userID,
-		"username":   username,
-		"expires_at": time.Now().Add(RefreshTokenTTL).Format(time.RFC3339),
+		"user_id":      userID,
+		"username":     username,
+		"avatar_url":   user.AvatarUrl,
+		"avatar_color": user.AvatarColor,
+		"expires_at":   time.Now().Add(RefreshTokenTTL).Format(time.RFC3339),
 	}).Err()
 	if err != nil {
 		return "", "", err
@@ -163,11 +184,17 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (string, str
 	return accessToken, newRefreshToken, nil
 }
 
-func (s *Service) generateAccessToken(userID int32, username string) (string, error) {
+func (s *Service) generateAccessToken(user *dtos.UserDto) (string, error) {
+	userJSON, err := json.Marshal(user)
+	if err != nil {
+		return "", err
+	}
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub":      float64(userID),
-		"username": username,
+		"sub":      float64(user.UserId),
+		"username": user.Username,
 		"exp":      time.Now().Add(AccessTokenTTL).Unix(),
+		"user":     string(userJSON),
 	})
 	return token.SignedString([]byte(s.secret))
 }
@@ -178,4 +205,41 @@ func (s *Service) generateRefreshToken() (string, error) {
 		return "", err
 	}
 	return base64.URLEncoding.EncodeToString(b), nil
+}
+
+func getRandomColor() string {
+	return generateRandomColor()
+}
+
+func pickRandomColor() string {
+	colors := []string{
+		"#FF5733",
+		"#33FF66",
+		"#5733FF",
+		"#FF66FF",
+		"#33FF33",
+		"#FF3063",
+		"#3333FF",
+		"#33AFAF",
+		"#FFFF33",
+		"#FF33FF",
+		"#66FF66",
+		"#3333FF",
+		"#FF6B6B",
+		"#4ECDC4",
+		"#45B7D1",
+		"#96CEB4",
+		"#FFEEAD",
+		"#D4A5A5",
+		"#9B59B6",
+		"#3498DB"}
+	r := mathrand.New(mathrand.NewSource(time.Now().UnixNano()))
+	avatarColor := colors[r.Intn(len(colors))]
+	return avatarColor
+
+}
+
+func generateRandomColor() string {
+	r := mathrand.New(mathrand.NewSource(time.Now().UnixNano()))
+	return "#" + string(rune(r.Intn(16777215)))
 }

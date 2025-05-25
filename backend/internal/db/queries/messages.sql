@@ -1,7 +1,7 @@
 -- name: CreateMessage :one
-INSERT INTO messages (channel_id, user_id, content, username)
-VALUES ($1, $2, $3, $4)
-RETURNING id, channel_id, user_id, content, username, created_at;
+INSERT INTO messages (channel_id, user_id, content)
+VALUES ($1, $2, $3)
+RETURNING id, channel_id, user_id, content, created_at;
 
 -- name: ListMessagesByChannel :many
 SELECT 
@@ -9,9 +9,10 @@ SELECT
     m.channel_id, 
     m.user_id, 
     m.content, 
-    m.username, 
+    u.username AS username, 
     m.created_at,
-    COALESCE(u.avatar_url, 'https://example.com/default-avatar.png') AS avatar_url
+    u.avatar_url AS avatar_url,
+    u.avatar_color AS avatar_color
 FROM messages m
 LEFT JOIN users u ON m.user_id = u.id
 WHERE m.channel_id = $1

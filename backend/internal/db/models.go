@@ -20,14 +20,14 @@ type Message struct {
 	ChannelID int32
 	UserID    int32
 	Content   string
-	Username  string
 	CreatedAt pgtype.Timestamptz
 }
 
 type User struct {
-	ID        int32
-	Username  string
-	Password  string
-	CreatedAt pgtype.Timestamptz
-	AvatarUrl pgtype.Text
+	ID          int32
+	Username    string
+	Password    string
+	CreatedAt   pgtype.Timestamptz
+	AvatarUrl   pgtype.Text
+	AvatarColor pgtype.Text
 }
