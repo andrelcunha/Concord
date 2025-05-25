@@ -107,8 +107,9 @@ onUnmounted(() => {
         <div v-if="message.avatar_url" class="w-8 h-8 rounded-full mr-2">
           <img :src="message.avatar_url" class="w-8 h-8 rounded-full mr-2" alt="User avatar" />
         </div>
-        <div v-else class="w-8 h-8 rounded-full mr-2"
-        :style="{ backgroundColor: message.avatar_color}">
+        <div v-else 
+          class="w-8 h-8 mr-2 flex items-center justify-center text-white font-bold rounded-full"
+          :style="{ backgroundColor: message.avatar_color, lineHeight: '32px', fontSize: '16px', textAlign: 'center' }">
           {{ message.username[0] ? message.username[0].toUpperCase() : '?'}}
         </div>
         <div>
