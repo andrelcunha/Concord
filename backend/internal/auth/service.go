@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"log"
 	mathrand "math/rand"
 	"strconv"
 	"time"
@@ -115,9 +116,18 @@ func authUser(ctx context.Context, s *Service, username string, password string)
 func (s *Service) Refresh(ctx context.Context, refreshToken string) (string, string, error) {
 	// Check Redis for refresh token
 	redisKey := "refresh_token:" + refreshToken
+
 	val, err := s.redis.HGetAll(ctx, redisKey).Result()
 	if err == redis.Nil || len(val) == 0 {
 		return "", "", ErrInvalidRefreshToken
+	}
+
+	// **Explicitly Delete the Old Refresh Token First**
+	delErr := s.redis.Del(ctx, redisKey).Err()
+	if delErr != nil {
+		log.Printf("Failed to delete refresh token %s: %v", redisKey, delErr)
+	} else {
+		log.Printf("Refresh token deleted: %s", redisKey)
 	}
 
 	// Parse expiration
@@ -178,9 +188,6 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (string, str
 	}
 	s.redis.Expire(ctx, newRedisKey, RefreshTokenTTL)
 
-	// Delete old refresh token
-	s.redis.Del(ctx, redisKey)
-
 	return accessToken, newRefreshToken, nil
 }
 
@@ -208,38 +215,12 @@ func (s *Service) generateRefreshToken() (string, error) {
 }
 
 func getRandomColor() string {
-	return generateRandomColor()
-}
-
-func pickRandomColor() string {
 	colors := []string{
-		"#FF5733",
-		"#33FF66",
-		"#5733FF",
-		"#FF66FF",
-		"#33FF33",
-		"#FF3063",
-		"#3333FF",
-		"#33AFAF",
-		"#FFFF33",
-		"#FF33FF",
-		"#66FF66",
-		"#3333FF",
-		"#FF6B6B",
-		"#4ECDC4",
-		"#45B7D1",
-		"#96CEB4",
-		"#FFEEAD",
-		"#D4A5A5",
-		"#9B59B6",
-		"#3498DB"}
+		"#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4",
+		"#FFEEAD", "#D4A5A5", "#9B59B6", "#3498DB",
+	}
 	r := mathrand.New(mathrand.NewSource(time.Now().UnixNano()))
 	avatarColor := colors[r.Intn(len(colors))]
 	return avatarColor
 
-}
-
-func generateRandomColor() string {
-	r := mathrand.New(mathrand.NewSource(time.Now().UnixNano()))
-	return "#" + string(rune(r.Intn(16777215)))
 }
