@@ -4,10 +4,15 @@ import (
 	"context"
 	"log"
 	"os"
+	"time"
 
 	"github.com/andrelcunha/Concord/backend/config"
 	"github.com/andrelcunha/Concord/backend/internal/auth"
+	"github.com/andrelcunha/Concord/backend/internal/channels"
+	"github.com/andrelcunha/Concord/backend/internal/messages"
 	"github.com/andrelcunha/Concord/backend/internal/middleware"
+	"github.com/andrelcunha/Concord/backend/internal/websocket"
+	"github.com/avast/retry-go/v4"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -27,11 +32,23 @@ func main() {
 	// Initialize auth service
 	authRepo := auth.NewRepository(dbPool)
 	authService := auth.NewService(authRepo, redisClient, secret)
-	authHandler := auth.NewHandler(authService)
+	auth.RegisterAuthRoutes(app, authService)
 
-	// Routes
-	addAuthRoutes(app, authHandler)
-	AddProtectedRoutes(app, secret)
+	api := AddProtectedRoutes(app, secret)
+
+	// Initialize channels service
+	channelsService := channels.NewService(channels.NewRepository(dbPool))
+	channels.RegisterChannelsRoutes(api, channelsService)
+
+	// Initialize websocket service
+	msgRepo := messages.NewRepository(dbPool)
+	websocketService := websocket.NewService(msgRepo, redisClient)
+	websocket.RegisterWebSocketRoutes(api, websocketService)
+
+	// Initialize Message service
+	messageService := messages.NewService(msgRepo)
+	messages.RegisterMessageRoutes(api, messageService)
+
 	addCustom404Handler(app)
 	// Start server
 	log.Fatal(app.Listen(":3000"))
@@ -47,15 +64,29 @@ func initilizeDatabase() *pgxpool.Pool {
 }
 
 func initializeRedis() *redis.Client {
+
 	opt, err := redis.ParseURL(config.Config("REDIS_URL"))
 	if err != nil {
 		log.Fatalf("Failed to parse Redis URL: %v\n", err)
 	}
+	// retry 3 times
 	redisClient := redis.NewClient(opt)
-	if err := redisClient.Ping(context.Background()).Err(); err != nil {
-		log.Fatalf("Failed to connect to Redis: %v\n", err)
+	err = retry.Do(
+		func() error {
+			if err := redisClient.Ping(context.Background()).Err(); err != nil {
+				log.Printf("Failed to connect to Redis: %v\n", err)
+				log.Println("Retrying...")
+				return err
+			}
+			log.Println("Connected to Redis")
+			return nil
+		},
+		retry.Attempts(3),
+		retry.Delay(1*time.Second),
+	)
+	if err != nil {
+		log.Fatalf("Failed to connect to Redis after 3 attempts: %v\n", err)
 	}
-	log.Println("Connected to Redis")
 	return redisClient
 }
 
@@ -85,16 +116,11 @@ func addCustom404Handler(app *fiber.App) {
 	})
 }
 
-func addAuthRoutes(app *fiber.App, authHandler *auth.Handler) {
-	app.Post("/register", authHandler.Register)
-	app.Post("/login", authHandler.Login)
-	app.Post("/refresh", authHandler.Refresh)
-}
-
-func AddProtectedRoutes(app *fiber.App, secret string) {
+func AddProtectedRoutes(app *fiber.App, secret string) fiber.Router {
 	protected := app.Group("/api", middleware.Auth(secret))
-	protected.Get("/profile", func(ctx *fiber.Ctx) error {
-		userID := ctx.Locals("userID").(string)
-		return ctx.JSON(fiber.Map{"username": userID})
-	})
+	// protected.Get("/profile", func(ctx *fiber.Ctx) error {
+	// 	userID := ctx.Locals("userID").(string)
+	// 	return ctx.JSON(fiber.Map{"username": userID})
+	// })
+	return protected
 }

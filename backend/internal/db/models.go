@@ -8,9 +8,26 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type User struct {
+type Channel struct {
 	ID        int32
-	Username  string
-	Password  string
+	Name      string
+	CreatedBy pgtype.Int4
 	CreatedAt pgtype.Timestamptz
+}
+
+type Message struct {
+	ID        int32
+	ChannelID int32
+	UserID    int32
+	Content   string
+	CreatedAt pgtype.Timestamptz
+}
+
+type User struct {
+	ID          int32
+	Username    string
+	Password    string
+	CreatedAt   pgtype.Timestamptz
+	AvatarUrl   pgtype.Text
+	AvatarColor pgtype.Text
 }

@@ -49,10 +49,11 @@
 
 <script setup>
 import { ref } from 'vue'
-import axios from 'axios'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
+const authStore = useAuthStore()
 const isLogin = ref(true)
 const form = ref({
   username: '',
@@ -63,24 +64,29 @@ const error = ref('')
 const handleSubmit = async () => {
   error.value = ''
   try {
-    const endpoint = isLogin.value ? '/login' : '/register'
-    const response = await axios.post(`http://localhost:3000${endpoint}`, {
-      username: form.value.username,
-      password: form.value.password
-    })
-
     if (isLogin.value) {
-      localStorage.setItem('access_token', response.data.access_token)
-      localStorage.setItem('refresh_token', response.data.refresh_token)
-      localStorage.setItem('username', form.value.username)
-      router.push('/home')
+      console.log('Attempting to login...')
+      await authStore.login({
+        username: form.value.username,
+        password: form.value.password
+      })
+      console.log('Login successful, redirecting to /channels')
+      await router.push('/channels')
     } else {
+      console.log('Attempting to register...')
+      const result = await authStore.register({
+        username: form.value.username,
+        password: form.value.password
+      })
+      console.log('Registration successful:', result)
       isLogin.value = true
       form.value.username = ''
       form.value.password = ''
-    }
+      error.value = `Registered as ${result.username}! Please log in.`
+    } 
   } catch (err) {
-    error.value = err.response?.data?.error || 'An error occurred'
+    console.error('Error:', err)
+    error.value = err || 'An error occurred'
   }
 }
 </script>

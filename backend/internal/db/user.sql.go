@@ -7,27 +7,72 @@ package db
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const createUser = `-- name: CreateUser :exec
-INSERT INTO users (username, password) VALUES ($1, $2)
+const createUser = `-- name: CreateUser :one
+INSERT INTO users (username, password, avatar_color) 
+VALUES ($1, $2, $3)
+RETURNING  id, username, avatar_url, avatar_color
 `
 
 type CreateUserParams struct {
-	Username string
-	Password string
+	Username    string
+	Password    string
+	AvatarColor pgtype.Text
 }
 
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
-	_, err := q.db.Exec(ctx, createUser, arg.Username, arg.Password)
-	return err
+type CreateUserRow struct {
+	ID          int32
+	Username    string
+	AvatarUrl   pgtype.Text
+	AvatarColor pgtype.Text
+}
+
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error) {
+	row := q.db.QueryRow(ctx, createUser, arg.Username, arg.Password, arg.AvatarColor)
+	var i CreateUserRow
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.AvatarUrl,
+		&i.AvatarColor,
+	)
+	return i, err
+}
+
+const getUserByID = `-- name: GetUserByID :one
+SELECT id, username, avatar_url, avatar_color 
+FROM users 
+WHERE id = $1
+`
+
+type GetUserByIDRow struct {
+	ID          int32
+	Username    string
+	AvatarUrl   pgtype.Text
+	AvatarColor pgtype.Text
+}
+
+func (q *Queries) GetUserByID(ctx context.Context, id int32) (GetUserByIDRow, error) {
+	row := q.db.QueryRow(ctx, getUserByID, id)
+	var i GetUserByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.AvatarUrl,
+		&i.AvatarColor,
+	)
+	return i, err
 }
 
 const getUserByUsername = `-- name: GetUserByUsername :one
-SELECT username, password FROM users WHERE username = $1
+SELECT id, username, password FROM users WHERE username = $1
 `
 
 type GetUserByUsernameRow struct {
+	ID       int32
 	Username string
 	Password string
 }
@@ -35,6 +80,6 @@ type GetUserByUsernameRow struct {
 func (q *Queries) GetUserByUsername(ctx context.Context, username string) (GetUserByUsernameRow, error) {
 	row := q.db.QueryRow(ctx, getUserByUsername, username)
 	var i GetUserByUsernameRow
-	err := row.Scan(&i.Username, &i.Password)
+	err := row.Scan(&i.ID, &i.Username, &i.Password)
 	return i, err
 }
