@@ -13,6 +13,7 @@ type Channel struct {
 	Name      string
 	CreatedBy pgtype.Int4
 	CreatedAt pgtype.Timestamptz
+	ServerID  int32
 }
 
 type Message struct {
@@ -21,6 +22,20 @@ type Message struct {
 	UserID    int32
 	Content   string
 	CreatedAt pgtype.Timestamptz
+}
+
+type Server struct {
+	ID        int32
+	Name      string
+	CreatorID pgtype.Int4
+	IsPublic  pgtype.Bool
+	CreatedAt pgtype.Timestamp
+}
+
+type ServerMember struct {
+	ServerID int32
+	UserID   int32
+	JoinedAt pgtype.Timestamp
 }
 
 type User struct {

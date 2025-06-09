@@ -12,47 +12,94 @@ import (
 )
 
 const createChannel = `-- name: CreateChannel :one
-INSERT INTO channels (name, created_by)
-VALUES ($1, $2)
-RETURNING id, name, created_by, created_at
+INSERT INTO channels (name, created_by, server_id)
+VALUES ($1, $2, $3)
+RETURNING id, name, created_by, server_id, created_at
 `
 
 type CreateChannelParams struct {
 	Name      string
 	CreatedBy pgtype.Int4
+	ServerID  int32
 }
 
-func (q *Queries) CreateChannel(ctx context.Context, arg CreateChannelParams) (Channel, error) {
-	row := q.db.QueryRow(ctx, createChannel, arg.Name, arg.CreatedBy)
-	var i Channel
+type CreateChannelRow struct {
+	ID        int32
+	Name      string
+	CreatedBy pgtype.Int4
+	ServerID  int32
+	CreatedAt pgtype.Timestamptz
+}
+
+func (q *Queries) CreateChannel(ctx context.Context, arg CreateChannelParams) (CreateChannelRow, error) {
+	row := q.db.QueryRow(ctx, createChannel, arg.Name, arg.CreatedBy, arg.ServerID)
+	var i CreateChannelRow
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
 		&i.CreatedBy,
+		&i.ServerID,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getChannel = `-- name: GetChannel :one
+SELECT id, name, created_by, server_id, created_at
+FROM channels
+WHERE id = $1
+`
+
+type GetChannelRow struct {
+	ID        int32
+	Name      string
+	CreatedBy pgtype.Int4
+	ServerID  int32
+	CreatedAt pgtype.Timestamptz
+}
+
+func (q *Queries) GetChannel(ctx context.Context, id int32) (GetChannelRow, error) {
+	row := q.db.QueryRow(ctx, getChannel, id)
+	var i GetChannelRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.CreatedBy,
+		&i.ServerID,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const listChannels = `-- name: ListChannels :many
-SELECT id, name, created_by, created_at
+SELECT id, name, created_by, server_id, created_at
 FROM channels
+WHERE server_id = $1
 ORDER BY created_at ASC
 `
 
-func (q *Queries) ListChannels(ctx context.Context) ([]Channel, error) {
-	rows, err := q.db.Query(ctx, listChannels)
+type ListChannelsRow struct {
+	ID        int32
+	Name      string
+	CreatedBy pgtype.Int4
+	ServerID  int32
+	CreatedAt pgtype.Timestamptz
+}
+
+func (q *Queries) ListChannels(ctx context.Context, serverID int32) ([]ListChannelsRow, error) {
+	rows, err := q.db.Query(ctx, listChannels, serverID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Channel
+	var items []ListChannelsRow
 	for rows.Next() {
-		var i Channel
+		var i ListChannelsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
 			&i.CreatedBy,
+			&i.ServerID,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err

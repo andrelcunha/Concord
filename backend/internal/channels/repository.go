@@ -13,8 +13,8 @@ type repository struct {
 }
 
 type Repository interface {
-	CreateChannel(ctx context.Context, name string, userID int64) (db.Channel, error)
-	ListChannels(ctx context.Context) ([]db.Channel, error)
+	CreateChannel(ctx context.Context, name string, userID, serverID int32) (db.CreateChannelRow, error)
+	ListChannels(ctx context.Context, serverID int32) ([]db.ListChannelsRow, error)
 }
 
 func NewRepository(dbPool *pgxpool.Pool) Repository {
@@ -25,12 +25,16 @@ func NewRepository(dbPool *pgxpool.Pool) Repository {
 }
 
 // Implement CreateChannel method
-func (r *repository) CreateChannel(ctx context.Context, name string, userID int64) (db.Channel, error) {
-	userIDPg := pgtype.Int4{Int32: int32(userID), Valid: true}
-	return r.db.CreateChannel(ctx, db.CreateChannelParams{Name: name, CreatedBy: userIDPg})
+func (r *repository) CreateChannel(ctx context.Context, name string, userID, serverId int32) (db.CreateChannelRow, error) {
+	arg := db.CreateChannelParams{
+		Name:      name,
+		CreatedBy: pgtype.Int4{Int32: userID, Valid: true},
+		ServerID:  serverId,
+	}
+	return r.db.CreateChannel(ctx, arg)
 }
 
 // Implement ListChannels method
-func (r *repository) ListChannels(ctx context.Context) ([]db.Channel, error) {
-	return r.db.ListChannels(ctx)
+func (r *repository) ListChannels(ctx context.Context, serverID int32) ([]db.ListChannelsRow, error) {
+	return r.db.ListChannels(ctx, serverID)
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/andrelcunha/Concord/backend/internal/channels"
 	"github.com/andrelcunha/Concord/backend/internal/messages"
 	"github.com/andrelcunha/Concord/backend/internal/middleware"
+	"github.com/andrelcunha/Concord/backend/internal/servers"
 	"github.com/andrelcunha/Concord/backend/internal/websocket"
 	"github.com/avast/retry-go/v4"
 	"github.com/gofiber/fiber/v2"
@@ -36,8 +37,13 @@ func main() {
 
 	api := AddProtectedRoutes(app, secret)
 
+	// Initialize servers service
+	serversRepo := servers.NewRepository(dbPool)
+	serversService := servers.NewService(serversRepo)
+	servers.RegisterServersRoutes(api, serversService)
+
 	// Initialize channels service
-	channelsService := channels.NewService(channels.NewRepository(dbPool))
+	channelsService := channels.NewService(channels.NewRepository(dbPool), serversRepo)
 	channels.RegisterChannelsRoutes(api, channelsService)
 
 	// Initialize websocket service
