@@ -1,53 +1,26 @@
 import React from 'react'
 import { NavLink, useLocation, useParams } from 'react-router-dom'
 
+import { useServersStore } from '@/features/servers/store'
+
 const serverDefinitions = {
-  atlas: {
-    name: 'Atlas Workspace',
-    groups: [
-      {
-        label: 'Text Channels',
-        items: [
-          { id: 'general', name: 'general' },
-          { id: 'announcements', name: 'announcements' },
-          { id: 'product-notes', name: 'product-notes' },
-        ],
-      },
-      {
-        label: 'Experiments',
-        items: [
-          { id: 'ideas', name: 'ideas' },
-          { id: 'design-lab', name: 'design-lab' },
-        ],
-      },
-    ],
-  },
-  orbit: {
-    name: 'Orbit Studio',
-    groups: [
-      {
-        label: 'Core',
-        items: [
-          { id: 'announcements', name: 'announcements' },
-          { id: 'launch-pad', name: 'launch-pad' },
-          { id: 'retrospective', name: 'retrospective' },
-        ],
-      },
-    ],
-  },
-  ember: {
-    name: 'Ember Guild',
-    groups: [
-      {
-        label: 'Creative',
-        items: [
-          { id: 'design-lab', name: 'design-lab' },
-          { id: 'moodboard', name: 'moodboard' },
-          { id: 'references', name: 'references' },
-        ],
-      },
-    ],
-  },
+  default: [
+    {
+      label: 'Text Channels',
+      items: [
+        { id: 'general', name: 'general' },
+        { id: 'announcements', name: 'announcements' },
+        { id: 'product-notes', name: 'product-notes' },
+      ],
+    },
+    {
+      label: 'Planning',
+      items: [
+        { id: 'ideas', name: 'ideas' },
+        { id: 'design-lab', name: 'design-lab' },
+      ],
+    },
+  ],
 }
 
 const dmGroups = [
@@ -69,10 +42,13 @@ const dmGroups = [
 export function ChannelSidebar() {
   const location = useLocation()
   const params = useParams()
+  const servers = useServersStore((state) => state.servers)
   const isDmRoute = location.pathname.startsWith('/app/dm')
-  const server = serverDefinitions[params.serverId] ?? serverDefinitions.atlas
-  const activeServerLabel = isDmRoute ? 'Direct Messages' : server.name
-  const groups = isDmRoute ? dmGroups : server.groups
+  const activeServer = servers.find((server) => String(server.id) === params.serverId)
+  const activeServerLabel = isDmRoute
+    ? 'Direct Messages'
+    : activeServer?.name ?? 'Choose a server'
+  const groups = isDmRoute ? dmGroups : serverDefinitions.default
 
   return (
     <aside className="flex w-full shrink-0 flex-col border-b border-concord-border/60 bg-concord-panel-alt/90 md:w-80 md:border-b-0 md:border-r">
@@ -82,8 +58,9 @@ export function ChannelSidebar() {
         </p>
         <h2 className="mt-2 text-xl font-semibold">Channels</h2>
         <p className="mt-2 text-sm leading-6 text-concord-muted">
-          Sprint 1 keeps this sidebar structural. Later sprints will replace these placeholders
-          with server-aware backend data.
+          {isDmRoute
+            ? 'The DM branch already has its own route model. Real conversation data lands in a later slice.'
+            : 'Servers are now real backend data. Channels remain a placeholder list until the next navigation slice.'}
         </p>
       </div>
 
@@ -100,7 +77,7 @@ export function ChannelSidebar() {
                   to={
                     isDmRoute
                       ? `/app/dm/${channel.id}`
-                      : `/app/servers/${params.serverId ?? 'atlas'}/channels/${channel.id}`
+                      : `/app/servers/${params.serverId ?? 'placeholder'}/channels/${channel.id}`
                   }
                   className={({ isActive }) =>
                     [
@@ -126,7 +103,7 @@ export function ChannelSidebar() {
             Planned
           </p>
           <p className="mt-2 text-sm leading-6 text-concord-muted">
-            Create channel, unread badges, and member-aware sections land in later slices.
+            Real channel fetching, selection defaults, unread badges, and member-aware sections land in later slices.
           </p>
         </div>
       </div>

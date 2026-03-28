@@ -3,12 +3,25 @@ import { NavLink, Outlet, useLocation, useParams } from 'react-router-dom'
 
 import { ChannelSidebar } from '@/components/layout/ChannelSidebar'
 import { ServerRail } from '@/components/layout/ServerRail'
+import { useServersStore } from '@/features/servers/store'
 import { useSessionStore } from '@/lib/sessionStore'
 
 export function AppShell() {
   const location = useLocation()
   const params = useParams()
   const logout = useSessionStore((state) => state.logout)
+  const fetchServers = useServersStore((state) => state.fetchServers)
+  const clearServers = useServersStore((state) => state.clearServers)
+
+  React.useEffect(() => {
+    fetchServers()
+  }, [fetchServers])
+
+  const handleLogout = React.useCallback(() => {
+    clearServers()
+    logout()
+  }, [clearServers, logout])
+
   const isDm = location.pathname.startsWith('/app/dm')
   const title = isDm
     ? params.conversationId
@@ -49,7 +62,7 @@ export function AppShell() {
               </div>
               <button
                 type="button"
-                onClick={logout}
+                onClick={handleLogout}
                 className="rounded-full border border-concord-danger/40 bg-concord-danger/10 px-4 py-2 text-sm text-concord-danger transition hover:bg-concord-danger/20"
               >
                 Sign out

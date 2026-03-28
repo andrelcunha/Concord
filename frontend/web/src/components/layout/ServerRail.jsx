@@ -1,11 +1,24 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
 
-const serverItems = [
-  { id: 'atlas', label: 'AT', to: '/app/servers/atlas/channels/general' },
-  { id: 'orbit', label: 'OR', to: '/app/servers/orbit/channels/announcements' },
-  { id: 'ember', label: 'EM', to: '/app/servers/ember/channels/design-lab' },
-]
+import { useServersStore } from '@/features/servers/store'
+
+function getServerBadge(name) {
+  const parts = name
+    .split(' ')
+    .map((part) => part.trim())
+    .filter(Boolean)
+
+  if (parts.length === 0) {
+    return '??'
+  }
+
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase()
+  }
+
+  return `${parts[0][0] ?? ''}${parts[1][0] ?? ''}`.toUpperCase()
+}
 
 function railLinkClass({ isActive }) {
   return [
@@ -17,6 +30,10 @@ function railLinkClass({ isActive }) {
 }
 
 export function ServerRail() {
+  const servers = useServersStore((state) => state.servers)
+  const isLoading = useServersStore((state) => state.isLoading)
+  const errorMessage = useServersStore((state) => state.errorMessage)
+
   return (
     <aside className="flex w-full flex-row items-center gap-3 overflow-x-auto border-b border-concord-border/60 bg-concord-panel px-4 py-4 md:w-24 md:flex-col md:items-center md:gap-4 md:overflow-visible md:border-b-0 md:border-r md:px-4 md:py-5">
       <div className="hidden md:block">
@@ -41,11 +58,27 @@ export function ServerRail() {
       <div className="hidden h-px w-10 bg-concord-border md:block" />
 
       <nav className="flex flex-row gap-3 md:flex-col">
-        {serverItems.map((item) => (
-          <NavLink key={item.id} to={item.to} className={railLinkClass}>
-            {item.label}
-          </NavLink>
-        ))}
+        {isLoading ? (
+          <div className="rounded-2xl border border-concord-border bg-concord-panel-alt px-3 py-2 text-xs uppercase tracking-[0.24em] text-concord-muted">
+            Loading
+          </div>
+        ) : null}
+        {!isLoading &&
+          servers.map((server) => (
+            <NavLink
+              key={server.id}
+              to={`/app/servers/${server.id}/channels/general`}
+              className={railLinkClass}
+              title={server.name}
+            >
+              {getServerBadge(server.name)}
+            </NavLink>
+          ))}
+        {!isLoading && servers.length === 0 ? (
+          <div className="max-w-[9rem] rounded-2xl border border-concord-border bg-concord-panel-alt px-3 py-2 text-xs leading-5 text-concord-muted md:max-w-none md:text-center">
+            No servers yet
+          </div>
+        ) : null}
       </nav>
 
       <div className="ml-auto flex flex-row items-center gap-3 md:ml-0 md:mt-auto md:flex-col">
@@ -69,6 +102,11 @@ export function ServerRail() {
           S
         </NavLink>
       </div>
+      {errorMessage ? (
+        <div className="hidden max-w-[9rem] rounded-2xl border border-concord-danger/30 bg-concord-danger/10 px-3 py-2 text-xs leading-5 text-concord-danger md:block">
+          {errorMessage}
+        </div>
+      ) : null}
     </aside>
   )
 }
