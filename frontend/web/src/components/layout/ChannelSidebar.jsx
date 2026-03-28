@@ -1,27 +1,8 @@
 import React from 'react'
 import { NavLink, useLocation, useParams } from 'react-router-dom'
 
+import { useChannelsStore } from '@/features/channels/store'
 import { useServersStore } from '@/features/servers/store'
-
-const serverDefinitions = {
-  default: [
-    {
-      label: 'Text Channels',
-      items: [
-        { id: 'general', name: 'general' },
-        { id: 'announcements', name: 'announcements' },
-        { id: 'product-notes', name: 'product-notes' },
-      ],
-    },
-    {
-      label: 'Planning',
-      items: [
-        { id: 'ideas', name: 'ideas' },
-        { id: 'design-lab', name: 'design-lab' },
-      ],
-    },
-  ],
-}
 
 const dmGroups = [
   {
@@ -43,12 +24,17 @@ export function ChannelSidebar() {
   const location = useLocation()
   const params = useParams()
   const servers = useServersStore((state) => state.servers)
+  const channelsByServerId = useChannelsStore((state) => state.channelsByServerId)
+  const loadingByServerId = useChannelsStore((state) => state.loadingByServerId)
+  const errorByServerId = useChannelsStore((state) => state.errorByServerId)
   const isDmRoute = location.pathname.startsWith('/app/dm')
   const activeServer = servers.find((server) => String(server.id) === params.serverId)
   const activeServerLabel = isDmRoute
     ? 'Direct Messages'
     : activeServer?.name ?? 'Choose a server'
-  const groups = isDmRoute ? dmGroups : serverDefinitions.default
+  const activeChannels = params.serverId ? channelsByServerId[String(params.serverId)] ?? [] : []
+  const isLoadingChannels = params.serverId ? loadingByServerId[String(params.serverId)] : false
+  const channelError = params.serverId ? errorByServerId[String(params.serverId)] : ''
 
   return (
     <aside className="flex w-full shrink-0 flex-col border-b border-concord-border/60 bg-concord-panel-alt/90 md:w-80 md:border-b-0 md:border-r">
@@ -60,25 +46,63 @@ export function ChannelSidebar() {
         <p className="mt-2 text-sm leading-6 text-concord-muted">
           {isDmRoute
             ? 'The DM branch already has its own route model. Real conversation data lands in a later slice.'
-            : 'Servers are now real backend data. Channels remain a placeholder list until the next navigation slice.'}
+            : 'Servers and channels now come from the backend. Message history and live chat land in the next sprint.'}
         </p>
       </div>
 
       <div className="flex-1 overflow-auto px-4 py-4">
-        {groups.map((group) => (
-          <section key={group.label} className="mb-6">
+        {isDmRoute ? (
+          dmGroups.map((group) => (
+            <section key={group.label} className="mb-6">
+              <h3 className="mb-3 px-2 text-xs font-semibold uppercase tracking-[0.28em] text-concord-muted">
+                {group.label}
+              </h3>
+              <div className="space-y-1">
+                {group.items.map((channel) => (
+                  <NavLink
+                    key={channel.id}
+                    to={`/app/dm/${channel.id}`}
+                    className={({ isActive }) =>
+                      [
+                        'flex items-center rounded-xl px-3 py-2 text-sm transition',
+                        isActive
+                          ? 'bg-concord-panel-soft text-concord-text'
+                          : 'text-concord-muted hover:bg-concord-panel-soft/70 hover:text-concord-text',
+                      ].join(' ')
+                    }
+                  >
+                    <span className="mr-3 text-base text-concord-accent">@</span>
+                    {channel.name}
+                  </NavLink>
+                ))}
+              </div>
+            </section>
+          ))
+        ) : (
+          <section className="mb-6">
             <h3 className="mb-3 px-2 text-xs font-semibold uppercase tracking-[0.28em] text-concord-muted">
-              {group.label}
+              Text Channels
             </h3>
+
+            {isLoadingChannels ? (
+              <p className="px-2 text-sm text-concord-muted">Loading channels...</p>
+            ) : null}
+
+            {channelError ? (
+              <p className="px-2 text-sm text-concord-danger">{channelError}</p>
+            ) : null}
+
+            {!isLoadingChannels && !channelError && activeChannels.length === 0 ? (
+              <p className="px-2 text-sm text-concord-muted">
+                No channels were returned for this server yet.
+              </p>
+            ) : null}
+
             <div className="space-y-1">
-              {group.items.map((channel) => (
+              {activeChannels.map((channel) => (
                 <NavLink
                   key={channel.id}
-                  to={
-                    isDmRoute
-                      ? `/app/dm/${channel.id}`
-                      : `/app/servers/${params.serverId ?? 'placeholder'}/channels/${channel.id}`
-                  }
+                  to={`/app/servers/${params.serverId}/channels/${channel.id}`}
                   className={({ isActive }) =>
                     [
                       'flex items-center rounded-xl px-3 py-2 text-sm transition',
@@ -88,13 +112,13 @@ export function ChannelSidebar() {
                     ].join(' ')
                   }
                 >
-                  <span className="mr-3 text-base text-concord-accent">{isDmRoute ? '@' : '#'}</span>
+                  <span className="mr-3 text-base text-concord-accent">#</span>
                   {channel.name}
                 </NavLink>
               ))}
             </div>
           </section>
-        ))}
+        )}
       </div>
 
       <div className="border-t border-concord-border/60 px-4 py-4">
@@ -103,7 +127,7 @@ export function ChannelSidebar() {
             Planned
           </p>
           <p className="mt-2 text-sm leading-6 text-concord-muted">
-            Real channel fetching, selection defaults, unread badges, and member-aware sections land in later slices.
+            Channel creation controls, unread badges, and member-aware sections land in later slices.
           </p>
         </div>
       </div>

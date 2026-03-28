@@ -2,6 +2,7 @@ import React from 'react'
 import { NavLink, Outlet, useLocation, useParams } from 'react-router-dom'
 
 import { ChannelSidebar } from '@/components/layout/ChannelSidebar'
+import { useChannelsStore } from '@/features/channels/store'
 import { ServerRail } from '@/components/layout/ServerRail'
 import { useServersStore } from '@/features/servers/store'
 import { useSessionStore } from '@/lib/sessionStore'
@@ -12,15 +13,24 @@ export function AppShell() {
   const logout = useSessionStore((state) => state.logout)
   const fetchServers = useServersStore((state) => state.fetchServers)
   const clearServers = useServersStore((state) => state.clearServers)
+  const fetchChannelsForServer = useChannelsStore((state) => state.fetchChannelsForServer)
+  const clearChannels = useChannelsStore((state) => state.clearChannels)
 
   React.useEffect(() => {
     fetchServers()
   }, [fetchServers])
 
+  React.useEffect(() => {
+    if (params.serverId) {
+      fetchChannelsForServer(params.serverId)
+    }
+  }, [fetchChannelsForServer, params.serverId])
+
   const handleLogout = React.useCallback(() => {
+    clearChannels()
     clearServers()
     logout()
-  }, [clearServers, logout])
+  }, [clearChannels, clearServers, logout])
 
   const isDm = location.pathname.startsWith('/app/dm')
   const title = isDm
