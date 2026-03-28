@@ -100,14 +100,31 @@ The default backend and frontend assumption should be that DMs reuse the chat do
 
 The URL should make the current context obvious.
 
-A likely direction:
+The canonical route model is:
 
 - `/login`
+- `/register`
+- `/app`
 - `/app/servers/:serverId/channels/:channelId`
+- `/app/dm`
 - `/app/dm/:conversationId`
 - `/app/settings`
 
-If DMs are not ready yet, the direct-message button can lead to a placeholder route instead of being omitted from the layout.
+Routing decisions locked in Sprint 0:
+
+- login and register should be separate routes rather than one toggled auth screen
+- all authenticated product surfaces should live under `/app`
+- server and channel selection should be encoded in the URL
+- DMs should have their own route branch even if they reuse the same chat architecture
+- settings should be a first-class route, not only a modal concept
+
+Redirect and fallback behavior:
+
+- `/` should redirect to `/login` when unauthenticated
+- `/` should redirect to a safe in-app destination when authenticated
+- `/app` should render a stable shell and then show either the last active context or an intentional empty state
+- `/app/dm` can be a placeholder route before real DM conversations exist
+- invalid server or channel URLs should render an in-shell unavailable state rather than ejecting the user from the app
 
 ## API Layer
 

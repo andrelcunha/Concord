@@ -95,6 +95,19 @@ Sprint 0 decisions currently locked:
 - `nickname` is a later feature and may be server-specific
 - early permissions stay simple
 - layout should remain strongly Discord-like
+- login and register are separate routes
+- authenticated product routes live under `/app`
+- server and channel context should be encoded in the URL
+
+Canonical route model:
+
+- `/login`
+- `/register`
+- `/app`
+- `/app/servers/:serverId/channels/:channelId`
+- `/app/dm`
+- `/app/dm/:conversationId`
+- `/app/settings`
 
 ## Sprint 1: React App Shell
 
