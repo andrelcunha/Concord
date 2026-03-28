@@ -28,7 +28,7 @@ func main() {
 	defer redisClient.Close()
 
 	app := initializeFiber()
-	secret := config.Config("SECRET")
+	secret := config.Config("SECRET_KEY")
 
 	// Initialize auth service
 	authRepo := auth.NewRepository(dbPool)
