@@ -98,6 +98,11 @@ Sprint 0 decisions currently locked:
 - login and register are separate routes
 - authenticated product routes live under `/app`
 - server and channel context should be encoded in the URL
+- the initial React stack is React, Vite, React Router, Tailwind CSS, Zustand, and Axios
+- local component state is the default state choice
+- route params are the source of truth for navigation state
+- Zustand is reserved for small shared app state
+- Redux and TanStack Query are intentionally deferred
 
 Canonical route model:
 

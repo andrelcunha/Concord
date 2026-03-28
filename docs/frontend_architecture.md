@@ -35,7 +35,19 @@ The current frontend has tension between a flat channel-first approach and a ser
 - Vite
 - React Router
 - Tailwind CSS
-- a small state solution first, such as Zustand, or a minimal React-context approach if the state remains simple
+- Zustand
+- Axios-based API client
+
+Sprint 0 stack decisions locked:
+
+- use React with Vite as the frontend foundation
+- use React Router for navigation
+- use Tailwind CSS for styling
+- use Zustand for small shared app state
+- use Axios for the HTTP client layer
+- do not introduce Redux in the initial migration
+- do not introduce TanStack Query in the initial migration
+- do not adopt a heavy component library in the initial migration
 
 ## Frontend Design Rules
 
@@ -82,6 +94,12 @@ Keep local state local:
 - modal visibility
 - one-off loading states
 - small view-only toggles
+
+State rules locked in Sprint 0:
+
+- route state should be the source of truth for selected server, selected channel, selected DM conversation, and current screen
+- Zustand should hold only truly shared state such as auth/session and later lightweight shared UI data
+- component-local state should remain the default for forms and small UI interactions
 
 ## Data Boundaries
 
@@ -135,6 +153,8 @@ Prefer:
 - one small API module per feature
 - shared HTTP client setup in one place
 - feature hooks or controllers that adapt API responses for UI use
+
+The initial migration should prefer a simple API layer over heavier server-state frameworks. If server-state complexity grows later, that decision can be revisited deliberately.
 
 ## Realtime Strategy
 
