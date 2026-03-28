@@ -99,7 +99,11 @@ func TestService_Login(t *testing.T) {
 		},
 	}
 	secret := "testsecret"
-	mr, _ := miniredis.Run()
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("failed to start miniredis: %v", err)
+	}
+	t.Cleanup(mr.Close)
 	mockRedis := redis.NewClient(&redis.Options{Addr: mr.Addr()})
 	service := NewService(mockRepo, mockRedis, secret)
 
@@ -149,7 +153,11 @@ func TestService_Refresh(t *testing.T) {
 			return nil, errors.New("User not found")
 		},
 	}
-	mr, _ := miniredis.Run()
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("failed to start miniredis: %v", err)
+	}
+	t.Cleanup(mr.Close)
 	redisClient := redis.NewClient(&redis.Options{Addr: mr.Addr()})
 	service := NewService(mockRepo, redisClient, secret)
 
