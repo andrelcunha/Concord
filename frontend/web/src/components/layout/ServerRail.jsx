@@ -18,12 +18,17 @@ function railLinkClass({ isActive }) {
 
 export function ServerRail() {
   return (
-    <aside className="flex w-24 flex-col items-center gap-4 border-r border-concord-border/60 bg-concord-panel px-4 py-5">
+    <aside className="flex w-full flex-row items-center gap-3 overflow-x-auto border-b border-concord-border/60 bg-concord-panel px-4 py-4 md:w-24 md:flex-col md:items-center md:gap-4 md:overflow-visible md:border-b-0 md:border-r md:px-4 md:py-5">
+      <div className="hidden md:block">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.34em] text-concord-muted">
+          Rail
+        </p>
+      </div>
       <NavLink
         to="/app/dm"
         className={({ isActive }) =>
           [
-            'flex h-14 w-14 items-center justify-center rounded-[1.6rem] border transition',
+            'flex h-14 w-14 shrink-0 items-center justify-center rounded-[1.6rem] border transition',
             isActive
               ? 'border-concord-accent bg-concord-accent text-slate-950'
               : 'border-concord-border bg-concord-night text-concord-text hover:border-concord-accent/60 hover:bg-concord-panel-soft',
@@ -33,9 +38,9 @@ export function ServerRail() {
         DM
       </NavLink>
 
-      <div className="h-px w-10 bg-concord-border" />
+      <div className="hidden h-px w-10 bg-concord-border md:block" />
 
-      <nav className="flex flex-col gap-3">
+      <nav className="flex flex-row gap-3 md:flex-col">
         {serverItems.map((item) => (
           <NavLink key={item.id} to={item.to} className={railLinkClass}>
             {item.label}
@@ -43,7 +48,7 @@ export function ServerRail() {
         ))}
       </nav>
 
-      <div className="mt-auto flex flex-col items-center gap-3">
+      <div className="ml-auto flex flex-row items-center gap-3 md:ml-0 md:mt-auto md:flex-col">
         <button
           type="button"
           className="flex h-12 w-12 items-center justify-center rounded-full border border-dashed border-concord-border bg-concord-panel-alt text-xl text-concord-muted transition hover:border-concord-accent hover:text-concord-text"

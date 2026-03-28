@@ -1,45 +1,94 @@
 import React from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useLocation, useParams } from 'react-router-dom'
 
-const channelGroups = [
+const serverDefinitions = {
+  atlas: {
+    name: 'Atlas Workspace',
+    groups: [
+      {
+        label: 'Text Channels',
+        items: [
+          { id: 'general', name: 'general' },
+          { id: 'announcements', name: 'announcements' },
+          { id: 'product-notes', name: 'product-notes' },
+        ],
+      },
+      {
+        label: 'Experiments',
+        items: [
+          { id: 'ideas', name: 'ideas' },
+          { id: 'design-lab', name: 'design-lab' },
+        ],
+      },
+    ],
+  },
+  orbit: {
+    name: 'Orbit Studio',
+    groups: [
+      {
+        label: 'Core',
+        items: [
+          { id: 'announcements', name: 'announcements' },
+          { id: 'launch-pad', name: 'launch-pad' },
+          { id: 'retrospective', name: 'retrospective' },
+        ],
+      },
+    ],
+  },
+  ember: {
+    name: 'Ember Guild',
+    groups: [
+      {
+        label: 'Creative',
+        items: [
+          { id: 'design-lab', name: 'design-lab' },
+          { id: 'moodboard', name: 'moodboard' },
+          { id: 'references', name: 'references' },
+        ],
+      },
+    ],
+  },
+}
+
+const dmGroups = [
   {
-    label: 'Text Channels',
+    label: 'Recent',
     items: [
-      { id: 'general', name: 'general' },
-      { id: 'announcements', name: 'announcements' },
-      { id: 'design-lab', name: 'design-lab' },
+      { id: 'ava-luna', name: 'ava-luna' },
+      { id: 'sam-kline', name: 'sam-kline' },
     ],
   },
   {
-    label: 'Placeholder',
+    label: 'Later',
     items: [
-      { id: 'product-notes', name: 'product-notes' },
-      { id: 'ideas', name: 'ideas' },
+      { id: 'group-prototype', name: 'group-prototype' },
     ],
   },
 ]
 
 export function ChannelSidebar() {
   const location = useLocation()
-  const activeServerLabel = location.pathname.startsWith('/app/dm')
-    ? 'Direct Messages'
-    : 'Server Placeholder'
+  const params = useParams()
+  const isDmRoute = location.pathname.startsWith('/app/dm')
+  const server = serverDefinitions[params.serverId] ?? serverDefinitions.atlas
+  const activeServerLabel = isDmRoute ? 'Direct Messages' : server.name
+  const groups = isDmRoute ? dmGroups : server.groups
 
   return (
-    <aside className="flex w-80 shrink-0 flex-col border-r border-concord-border/60 bg-concord-panel-alt/90">
+    <aside className="flex w-full shrink-0 flex-col border-b border-concord-border/60 bg-concord-panel-alt/90 md:w-80 md:border-b-0 md:border-r">
       <div className="border-b border-concord-border/60 px-5 py-5">
         <p className="text-xs font-semibold uppercase tracking-[0.32em] text-concord-muted">
           {activeServerLabel}
         </p>
         <h2 className="mt-2 text-xl font-semibold">Channels</h2>
         <p className="mt-2 text-sm leading-6 text-concord-muted">
-          Sprint 1 keeps this sidebar structural. Real server and channel data will arrive in later
-          sprints.
+          Sprint 1 keeps this sidebar structural. Later sprints will replace these placeholders
+          with server-aware backend data.
         </p>
       </div>
 
       <div className="flex-1 overflow-auto px-4 py-4">
-        {channelGroups.map((group) => (
+        {groups.map((group) => (
           <section key={group.label} className="mb-6">
             <h3 className="mb-3 px-2 text-xs font-semibold uppercase tracking-[0.28em] text-concord-muted">
               {group.label}
@@ -48,7 +97,11 @@ export function ChannelSidebar() {
               {group.items.map((channel) => (
                 <NavLink
                   key={channel.id}
-                  to={`/app/servers/atlas/channels/${channel.id}`}
+                  to={
+                    isDmRoute
+                      ? `/app/dm/${channel.id}`
+                      : `/app/servers/${params.serverId ?? 'atlas'}/channels/${channel.id}`
+                  }
                   className={({ isActive }) =>
                     [
                       'flex items-center rounded-xl px-3 py-2 text-sm transition',
@@ -58,7 +111,7 @@ export function ChannelSidebar() {
                     ].join(' ')
                   }
                 >
-                  <span className="mr-3 text-base text-concord-accent">#</span>
+                  <span className="mr-3 text-base text-concord-accent">{isDmRoute ? '@' : '#'}</span>
                   {channel.name}
                 </NavLink>
               ))}
@@ -68,12 +121,14 @@ export function ChannelSidebar() {
       </div>
 
       <div className="border-t border-concord-border/60 px-4 py-4">
-        <button
-          type="button"
-          className="w-full rounded-2xl border border-concord-accent/40 bg-concord-accent/12 px-4 py-3 text-sm font-semibold text-concord-text transition hover:border-concord-accent hover:bg-concord-accent/18"
-        >
-          Create channel later
-        </button>
+        <div className="rounded-2xl border border-concord-border bg-concord-panel/80 px-4 py-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-concord-muted">
+            Planned
+          </p>
+          <p className="mt-2 text-sm leading-6 text-concord-muted">
+            Create channel, unread badges, and member-aware sections land in later slices.
+          </p>
+        </div>
       </div>
     </aside>
   )

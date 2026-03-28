@@ -26,6 +26,7 @@ html,
 body,
 #app {
   min-height: 100%;
+  width: 100%;
 }
 
 body {
@@ -33,6 +34,7 @@ body {
   background:
     radial-gradient(circle at top, rgba(90, 209, 178, 0.12), transparent 32%),
     linear-gradient(180deg, #181c23 0%, #12161c 100%);
+  color: var(--color-concord-text);
 }
 
 button,
