@@ -179,6 +179,12 @@ Instead:
 3. discard confusing frontend structure
 4. rebuild the UI shell around one clear navigation model
 
+Migration sequencing locked in Sprint 0:
+
+- build layout and route structure first
+- wire backend integration in later sprints
+- do not mix shell migration with full data integration in the first React slice
+
 ## Success Criteria
 
 The migrated frontend is successful if:

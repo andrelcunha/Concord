@@ -124,6 +124,12 @@ Target outcome:
 
 - a protected app shell exists with the right structural panels, even if some areas are placeholders
 
+Locked scope boundary:
+
+- Sprint 1 is layout first
+- backend integration happens in later sprints
+- the purpose of Sprint 1 is to make the app structurally correct before making it fully functional
+
 Suggested slices:
 
 1. scaffold the React app structure
@@ -133,6 +139,18 @@ Suggested slices:
 5. build the channel sidebar shell
 6. add the settings entry placeholder
 7. add an empty-state main panel
+
+Things intentionally out of scope for Sprint 1:
+
+- real login and registration integration
+- backend data fetching
+- real server and channel data
+- chat history loading
+- WebSocket integration
+- optimistic messaging
+- unread logic
+- real settings editing
+- real DM behavior
 
 ## Sprint 2: Auth And Session Flow
 
@@ -279,7 +297,7 @@ This sprint is intentionally late. It is important for learning, but not at the 
 The next best sequence is:
 
 1. finish Sprint 0 by treating these docs as the current source of truth
-2. begin Sprint 1 with React scaffolding
+2. begin Sprint 1 with layout-first React scaffolding
 3. build the canonical shell before migrating detailed views
 4. restore auth and navigation before chat polish
 
