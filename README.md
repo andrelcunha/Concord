@@ -188,3 +188,4 @@ These are useful areas to improve if you want to continue productizing the app.
 - [docs/roadmap.md](/home/andre/src/tests_and_examples/golang/Concord/docs/roadmap.md)
 - [docs/frontend_architecture.md](/home/andre/src/tests_and_examples/golang/Concord/docs/frontend_architecture.md)
 - [docs/frontend_design_direction.md](/home/andre/src/tests_and_examples/golang/Concord/docs/frontend_design_direction.md)
+- [docs/implementation_plan.md](/home/andre/src/tests_and_examples/golang/Concord/docs/implementation_plan.md)

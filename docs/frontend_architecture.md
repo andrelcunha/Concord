@@ -94,6 +94,8 @@ Suggested ownership:
 - dm feature should begin as a placeholder shell until the backend model is ready
 - settings feature should begin as a placeholder route and later own profile and account-edit flows
 
+The default backend and frontend assumption should be that DMs reuse the chat domain model wherever practical. A DM can be treated as a restricted conversation context rather than a separate messaging system, unless later product needs justify divergence.
+
 ## Routing Direction
 
 The URL should make the current context obvious.

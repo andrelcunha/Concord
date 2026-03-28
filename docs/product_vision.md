@@ -53,6 +53,51 @@ The shell should also reserve a clear place for user settings, even if the setti
 - Use the project to understand systems behavior, not just surface-level UI
 - Build the frontend so a backend-oriented developer can still reason about it
 
+## Locked Decisions For Sprint 0
+
+These decisions are considered locked unless a later learning need gives a strong reason to revisit them.
+
+### Direct Messages
+
+- DMs should exist as a visible product concept from the start through a left-rail entry point
+- in Sprint 1, DMs are only a placeholder surface
+- the first real DM implementation should come after core server and channel chat is stable
+- the default assumption is that a DM reuses the same underlying chat architecture as channel chat, with different membership and navigation rules
+
+This is the preferred model because a DM is, in practice, a conversation space with tighter access rules rather than a fundamentally different messaging primitive.
+
+### Identity Model
+
+- `username` is the stable account identifier
+- `full_name` should be optional and can be added later
+- `avatar_url` should be optional and can be added later
+- `nickname` is a later feature and should be treated as a possible server-specific field rather than an early global field
+
+### Permissions
+
+- early Concord should keep permissions simple
+- server creator and server members are enough for the first meaningful versions
+- a deeper role and permission model should come later
+
+### Degree Of Discord Similarity
+
+- layout and interaction structure should stay strongly Discord-like
+- visual identity can diverge gradually over time
+- Concord should feel familiar first, then distinctive later
+
+### V1 Definition
+
+The first meaningful stripped-down Concord should include:
+
+- auth
+- server rail
+- channel sidebar
+- chat history
+- live messaging
+- DM placeholder
+- settings placeholder
+- a stable responsive shell
+
 ## Feature Selection Rule
 
 A feature is a good candidate when it satisfies at least one of these:
