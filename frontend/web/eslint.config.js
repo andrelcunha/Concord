@@ -1,15 +1,15 @@
 import { defineConfig, globalIgnores } from 'eslint/config'
 import globals from 'globals'
 import js from '@eslint/js'
-import pluginVue from 'eslint-plugin-vue'
 import pluginVitest from '@vitest/eslint-plugin'
 import pluginCypress from 'eslint-plugin-cypress/flat'
-import skipFormatting from '@vue/eslint-config-prettier/skip-formatting'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
 
 export default defineConfig([
   {
     name: 'app/files-to-lint',
-    files: ['**/*.{js,mjs,jsx,vue}'],
+    files: ['**/*.{js,mjs,jsx}'],
   },
 
   globalIgnores(['**/dist/**', '**/dist-ssr/**', '**/coverage/**']),
@@ -23,7 +23,23 @@ export default defineConfig([
   },
 
   js.configs.recommended,
-  ...pluginVue.configs['flat/essential'],
+  reactHooks.configs['recommended-latest'],
+  {
+    files: ['**/*.{js,jsx}'],
+    languageOptions: {
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true,
+        },
+      },
+    },
+    plugins: {
+      'react-refresh': reactRefresh,
+    },
+    rules: {
+      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+    },
+  },
   
   {
     ...pluginVitest.configs.recommended,
@@ -37,5 +53,4 @@ export default defineConfig([
       'cypress/support/**/*.{js,ts,jsx,tsx}'
     ],
   },
-  skipFormatting,
 ])
