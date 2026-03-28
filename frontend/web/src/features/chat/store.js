@@ -6,6 +6,7 @@ export const useChatStore = create((set, get) => ({
   messagesByChannelId: {},
   loadingByChannelId: {},
   errorByChannelId: {},
+  connectionStateByChannelId: {},
   fetchMessagesForChannel: async (channelId) => {
     if (!channelId) {
       return
@@ -57,5 +58,30 @@ export const useChatStore = create((set, get) => ({
       messagesByChannelId: {},
       loadingByChannelId: {},
       errorByChannelId: {},
+      connectionStateByChannelId: {},
     }),
+  appendMessage: (channelId, message) =>
+    set((state) => {
+      const key = String(channelId)
+      const existingMessages = state.messagesByChannelId[key] ?? []
+      const alreadyPresent = existingMessages.some((item) => item.id === message.id)
+
+      if (alreadyPresent) {
+        return state
+      }
+
+      return {
+        messagesByChannelId: {
+          ...state.messagesByChannelId,
+          [key]: [...existingMessages, message],
+        },
+      }
+    }),
+  setConnectionState: (channelId, connectionState) =>
+    set((state) => ({
+      connectionStateByChannelId: {
+        ...state.connectionStateByChannelId,
+        [String(channelId)]: connectionState,
+      },
+    })),
 }))

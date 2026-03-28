@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom'
 import { useChatStore } from '@/features/chat/store'
 import { useChannelsStore } from '@/features/channels/store'
 import { useServersStore } from '@/features/servers/store'
+import { useSessionStore } from '@/lib/sessionStore'
 
 function formatMessageTime(value) {
   const date = new Date(value)
@@ -28,12 +29,87 @@ export function ChannelPage() {
   const messagesByChannelId = useChatStore((state) => state.messagesByChannelId)
   const loadingByChannelId = useChatStore((state) => state.loadingByChannelId)
   const errorByChannelId = useChatStore((state) => state.errorByChannelId)
+  const connectionStateByChannelId = useChatStore((state) => state.connectionStateByChannelId)
+  const appendMessage = useChatStore((state) => state.appendMessage)
+  const setConnectionState = useChatStore((state) => state.setConnectionState)
+  const accessToken = useSessionStore((state) => state.accessToken)
   const server = servers.find((item) => String(item.id) === serverId)
   const channels = channelsByServerId[String(serverId)] ?? []
   const channel = channels.find((item) => String(item.id) === channelId)
   const messages = messagesByChannelId[String(channelId)] ?? []
   const isLoadingMessages = loadingByChannelId[String(channelId)]
   const messageError = errorByChannelId[String(channelId)]
+  const connectionState = connectionStateByChannelId[String(channelId)] ?? 'idle'
+  const [draftMessage, setDraftMessage] = React.useState('')
+  const [sendError, setSendError] = React.useState('')
+  const socketRef = React.useRef(null)
+
+  React.useEffect(() => {
+    setDraftMessage('')
+    setSendError('')
+  }, [channelId])
+
+  React.useEffect(() => {
+    if (!channelId || !accessToken || !channel) {
+      return undefined
+    }
+
+    const websocketUrl = new URL('/api/ws', import.meta.env.VITE_WS_URL)
+    websocketUrl.searchParams.set('channel_id', channelId)
+    websocketUrl.searchParams.set('token', accessToken)
+
+    setConnectionState(channelId, 'connecting')
+    const socket = new WebSocket(websocketUrl.toString())
+    socketRef.current = socket
+
+    socket.onopen = () => {
+      setConnectionState(channelId, 'connected')
+    }
+
+    socket.onmessage = (event) => {
+      try {
+        const parsedMessage = JSON.parse(event.data)
+        appendMessage(channelId, parsedMessage)
+      } catch (_error) {
+        setSendError('Received an unreadable live message payload.')
+      }
+    }
+
+    socket.onerror = () => {
+      setSendError('The live connection ran into a problem.')
+    }
+
+    socket.onclose = () => {
+      setConnectionState(channelId, 'disconnected')
+    }
+
+    return () => {
+      socket.close()
+      socketRef.current = null
+    }
+  }, [accessToken, appendMessage, channel, channelId, setConnectionState])
+
+  function handleSendMessage(event) {
+    event.preventDefault()
+    setSendError('')
+
+    const content = draftMessage.trim()
+    if (!content) {
+      return
+    }
+
+    if (!socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) {
+      setSendError('Live connection is not ready yet.')
+      return
+    }
+
+    socketRef.current.send(
+      JSON.stringify({
+        content,
+      }),
+    )
+    setDraftMessage('')
+  }
 
   if (!channel) {
     return (
@@ -63,15 +139,18 @@ export function ChannelPage() {
           {server?.name ?? `Server ${serverId}`} · #{channel.name}
         </h2>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-concord-muted">
-          This slice focuses on the read side of chat. The message history now comes from the real
-          backend route, while live sending and WebSocket updates remain a later slice.
+          Message history comes from the real backend route, and this slice adds basic live sending
+          and WebSocket updates to complete the first end-to-end chat loop.
         </p>
       </div>
 
       <div className="overflow-hidden rounded-[2rem] border border-concord-border bg-concord-panel/70 shadow-[0_25px_80px_rgba(0,0,0,0.25)]">
-        <div className="border-b border-concord-border/60 px-6 py-4">
+        <div className="flex flex-col gap-2 border-b border-concord-border/60 px-6 py-4 md:flex-row md:items-center md:justify-between">
           <p className="text-sm text-concord-muted">
             Channel #{channel.name} · {messages.length} loaded message{messages.length === 1 ? '' : 's'}
+          </p>
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-concord-muted">
+            Live state: {connectionState}
           </p>
         </div>
 
@@ -128,6 +207,35 @@ export function ChannelPage() {
                 </div>
               </article>
             ))}
+        </div>
+
+        <div className="border-t border-concord-border/60 px-4 py-4 md:px-6">
+          <form className="flex flex-col gap-3" onSubmit={handleSendMessage}>
+            <label className="text-xs font-semibold uppercase tracking-[0.24em] text-concord-muted">
+              Send a message
+            </label>
+            <div className="flex flex-col gap-3 md:flex-row">
+              <input
+                value={draftMessage}
+                onChange={(event) => setDraftMessage(event.target.value)}
+                placeholder={`Message #${channel.name}`}
+                className="min-w-0 flex-1 rounded-2xl border border-concord-border bg-concord-panel-alt px-4 py-3 text-sm text-concord-text outline-none transition focus:border-concord-accent"
+              />
+              <button
+                type="submit"
+                className="rounded-2xl bg-concord-accent px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-concord-accent-strong"
+              >
+                Send
+              </button>
+            </div>
+            {sendError ? (
+              <p className="text-sm text-concord-danger">{sendError}</p>
+            ) : (
+              <p className="text-sm text-concord-muted">
+                This is the first live-chat slice. Reconnect strategy and optimistic UI come later.
+              </p>
+            )}
+          </form>
         </div>
       </div>
     </section>
