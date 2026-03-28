@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation, useParams } from 'react-router-dom'
 
 import { ChannelSidebar } from '@/components/layout/ChannelSidebar'
 import { useChannelsStore } from '@/features/channels/store'
+import { useChatStore } from '@/features/chat/store'
 import { ServerRail } from '@/components/layout/ServerRail'
 import { useServersStore } from '@/features/servers/store'
 import { useSessionStore } from '@/lib/sessionStore'
@@ -15,6 +16,8 @@ export function AppShell() {
   const clearServers = useServersStore((state) => state.clearServers)
   const fetchChannelsForServer = useChannelsStore((state) => state.fetchChannelsForServer)
   const clearChannels = useChannelsStore((state) => state.clearChannels)
+  const fetchMessagesForChannel = useChatStore((state) => state.fetchMessagesForChannel)
+  const clearMessages = useChatStore((state) => state.clearMessages)
 
   React.useEffect(() => {
     fetchServers()
@@ -26,11 +29,18 @@ export function AppShell() {
     }
   }, [fetchChannelsForServer, params.serverId])
 
+  React.useEffect(() => {
+    if (params.channelId) {
+      fetchMessagesForChannel(params.channelId)
+    }
+  }, [fetchMessagesForChannel, params.channelId])
+
   const handleLogout = React.useCallback(() => {
+    clearMessages()
     clearChannels()
     clearServers()
     logout()
-  }, [clearChannels, clearServers, logout])
+  }, [clearChannels, clearMessages, clearServers, logout])
 
   const isDm = location.pathname.startsWith('/app/dm')
   const title = isDm
