@@ -19,9 +19,9 @@ CREATE TABLE server_members (
 ALTER TABLE channels
 ADD COLUMN server_id INT REFERENCES servers(id);
 
--- Create a default server for existing channels
+-- Create a default server for existing channels (no creator since no users exist yet)
 INSERT INTO servers (name, creator_id, is_public)
-VALUES ('Default Server', 1, TRUE);
+VALUES ('Default Server', NULL, TRUE);
 
 -- Assign existing channels to the default server
 UPDATE channels
