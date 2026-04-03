@@ -77,6 +77,73 @@ export const useChatStore = create((set, get) => ({
         },
       }
     }),
+  addOptimisticMessage: (channelId, message) =>
+    set((state) => {
+      const key = String(channelId)
+      const existingMessages = state.messagesByChannelId[key] ?? []
+
+      return {
+        messagesByChannelId: {
+          ...state.messagesByChannelId,
+          [key]: [...existingMessages, message],
+        },
+      }
+    }),
+  markOptimisticMessageFailed: (channelId, optimisticId) =>
+    set((state) => {
+      const key = String(channelId)
+      const existingMessages = state.messagesByChannelId[key] ?? []
+
+      return {
+        messagesByChannelId: {
+          ...state.messagesByChannelId,
+          [key]: existingMessages.map((message) =>
+            message.id === optimisticId
+              ? {
+                  ...message,
+                  optimisticState: 'failed',
+                }
+              : message,
+          ),
+        },
+      }
+    }),
+  reconcileIncomingMessage: (channelId, message, currentUsername) =>
+    set((state) => {
+      const key = String(channelId)
+      const existingMessages = state.messagesByChannelId[key] ?? []
+
+      const optimisticIndex = existingMessages.findIndex(
+        (item) =>
+          String(item.id).startsWith('optimistic-') &&
+          item.content === message.content &&
+          item.username === currentUsername,
+      )
+
+      if (optimisticIndex >= 0) {
+        const nextMessages = [...existingMessages]
+        nextMessages[optimisticIndex] = message
+
+        return {
+          messagesByChannelId: {
+            ...state.messagesByChannelId,
+            [key]: nextMessages,
+          },
+        }
+      }
+
+      const alreadyPresent = existingMessages.some((item) => item.id === message.id)
+      if (alreadyPresent) {
+        return state
+      }
+
+      return {
+        messagesByChannelId: {
+          ...state.messagesByChannelId,
+          [key]: [...existingMessages, message],
+        },
+      }
+    }),
   setConnectionState: (channelId, connectionState) =>
     set((state) => ({
       connectionStateByChannelId: {

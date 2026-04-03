@@ -30,9 +30,12 @@ export function ChannelPage() {
   const loadingByChannelId = useChatStore((state) => state.loadingByChannelId)
   const errorByChannelId = useChatStore((state) => state.errorByChannelId)
   const connectionStateByChannelId = useChatStore((state) => state.connectionStateByChannelId)
-  const appendMessage = useChatStore((state) => state.appendMessage)
+  const addOptimisticMessage = useChatStore((state) => state.addOptimisticMessage)
+  const markOptimisticMessageFailed = useChatStore((state) => state.markOptimisticMessageFailed)
+  const reconcileIncomingMessage = useChatStore((state) => state.reconcileIncomingMessage)
   const setConnectionState = useChatStore((state) => state.setConnectionState)
   const accessToken = useSessionStore((state) => state.accessToken)
+  const currentUser = useSessionStore((state) => state.currentUser)
   const server = servers.find((item) => String(item.id) === serverId)
   const channels = channelsByServerId[String(serverId)] ?? []
   const channel = channels.find((item) => String(item.id) === channelId)
@@ -42,6 +45,7 @@ export function ChannelPage() {
   const connectionState = connectionStateByChannelId[String(channelId)] ?? 'idle'
   const [draftMessage, setDraftMessage] = React.useState('')
   const [sendError, setSendError] = React.useState('')
+  const [reconnectNonce, setReconnectNonce] = React.useState(0)
   const socketRef = React.useRef(null)
 
   React.useEffect(() => {
@@ -69,7 +73,7 @@ export function ChannelPage() {
     socket.onmessage = (event) => {
       try {
         const parsedMessage = JSON.parse(event.data)
-        appendMessage(channelId, parsedMessage)
+        reconcileIncomingMessage(channelId, parsedMessage, currentUser?.username ?? '')
       } catch (_error) {
         setSendError('Received an unreadable live message payload.')
       }
@@ -87,7 +91,15 @@ export function ChannelPage() {
       socket.close()
       socketRef.current = null
     }
-  }, [accessToken, appendMessage, channel, channelId, setConnectionState])
+  }, [
+    accessToken,
+    channel,
+    channelId,
+    currentUser?.username,
+    reconnectNonce,
+    reconcileIncomingMessage,
+    setConnectionState,
+  ])
 
   function handleSendMessage(event) {
     event.preventDefault()
@@ -103,12 +115,36 @@ export function ChannelPage() {
       return
     }
 
-    socketRef.current.send(
-      JSON.stringify({
-        content,
-      }),
-    )
-    setDraftMessage('')
+    const optimisticId = `optimistic-${channelId}-${Date.now()}`
+
+    addOptimisticMessage(channelId, {
+      id: optimisticId,
+      channel_id: Number(channelId),
+      user_id: -1,
+      content,
+      username: currentUser?.username ?? 'You',
+      created_at: new Date().toISOString(),
+      avatar_url: currentUser?.avatarUrl ?? '',
+      avatar_color: currentUser?.avatarColor ?? '#5ad1b2',
+      optimisticState: 'sending',
+    })
+
+    try {
+      socketRef.current.send(
+        JSON.stringify({
+          content,
+        }),
+      )
+      setDraftMessage('')
+    } catch (_error) {
+      markOptimisticMessageFailed(channelId, optimisticId)
+      setSendError('Could not send the message through the live connection.')
+    }
+  }
+
+  function handleReconnect() {
+    setSendError('')
+    setReconnectNonce((value) => value + 1)
   }
 
   if (!channel) {
@@ -149,9 +185,20 @@ export function ChannelPage() {
           <p className="text-sm text-concord-muted">
             Channel #{channel.name} · {messages.length} loaded message{messages.length === 1 ? '' : 's'}
           </p>
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-concord-muted">
-            Live state: {connectionState}
-          </p>
+          <div className="flex items-center gap-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-concord-muted">
+              Live state: {connectionState}
+            </p>
+            {connectionState !== 'connected' ? (
+              <button
+                type="button"
+                onClick={handleReconnect}
+                className="rounded-full border border-concord-border bg-concord-panel-alt px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-concord-text transition hover:border-concord-accent"
+              >
+                Reconnect
+              </button>
+            ) : null}
+          </div>
         </div>
 
         <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6">
@@ -200,6 +247,17 @@ export function ChannelPage() {
                     <span className="text-xs uppercase tracking-[0.22em] text-concord-muted">
                       {formatMessageTime(message.created_at)}
                     </span>
+                    {message.optimisticState ? (
+                      <span
+                        className={`text-[10px] font-semibold uppercase tracking-[0.24em] ${
+                          message.optimisticState === 'failed'
+                            ? 'text-concord-danger'
+                            : 'text-concord-accent'
+                        }`}
+                      >
+                        {message.optimisticState}
+                      </span>
+                    ) : null}
                   </div>
                   <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-concord-text/92">
                     {message.content}
@@ -232,7 +290,8 @@ export function ChannelPage() {
               <p className="text-sm text-concord-danger">{sendError}</p>
             ) : (
               <p className="text-sm text-concord-muted">
-                This is the first live-chat slice. Reconnect strategy and optimistic UI come later.
+                This slice adds optimistic sending and a manual reconnect path. More advanced
+                recovery behavior can come later.
               </p>
             )}
           </form>
