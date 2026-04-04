@@ -258,6 +258,11 @@ Goal:
 Candidate slices:
 
 - direct messages
+- bot support foundation
+
+Related planning doc:
+
+- `docs/bot_support_plan.md`
 - presence
 - typing indicators
 - reactions

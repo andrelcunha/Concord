@@ -120,6 +120,27 @@ Learning value:
 - indexing and retrieval
 - more complex product surfaces
 
+## Phase 5.5: Bots And Automation
+
+Goal:
+
+- explore non-human actors without committing too early to a full platform ecosystem
+
+Features:
+
+- internal bot accounts
+- bot tokens
+- server-scoped bot membership
+- event consumption
+- basic command handling
+
+Learning value:
+
+- actor modeling
+- permission boundaries
+- event design
+- platform-vs-feature tradeoffs
+
 ## Phase 6: Voice And Video Exploration
 
 Goal:

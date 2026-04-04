@@ -22,6 +22,14 @@ function getMessageInitial(username) {
   return username?.slice(0, 1).toUpperCase() || '?'
 }
 
+function isSameAuthorBlock(currentMessage, previousMessage) {
+  if (!previousMessage) {
+    return false
+  }
+
+  return currentMessage.username === previousMessage.username
+}
+
 export function ChannelPage() {
   const { serverId, channelId } = useParams()
   const servers = useServersStore((state) => state.servers)
@@ -47,11 +55,22 @@ export function ChannelPage() {
   const [sendError, setSendError] = React.useState('')
   const [reconnectNonce, setReconnectNonce] = React.useState(0)
   const socketRef = React.useRef(null)
+  const reconnectTimeoutRef = React.useRef(null)
+  const messagesContainerRef = React.useRef(null)
 
   React.useEffect(() => {
     setDraftMessage('')
     setSendError('')
   }, [channelId])
+
+  React.useEffect(() => {
+    const container = messagesContainerRef.current
+    if (!container) {
+      return
+    }
+
+    container.scrollTop = container.scrollHeight
+  }, [messages.length, channelId])
 
   React.useEffect(() => {
     if (!channelId || !accessToken || !channel) {
@@ -68,6 +87,11 @@ export function ChannelPage() {
 
     socket.onopen = () => {
       setConnectionState(channelId, 'connected')
+      setSendError('')
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current)
+        reconnectTimeoutRef.current = null
+      }
     }
 
     socket.onmessage = (event) => {
@@ -80,14 +104,21 @@ export function ChannelPage() {
     }
 
     socket.onerror = () => {
-      setSendError('The live connection ran into a problem.')
+      setSendError('The live connection ran into a problem. Trying again soon...')
     }
 
     socket.onclose = () => {
       setConnectionState(channelId, 'disconnected')
+      reconnectTimeoutRef.current = window.setTimeout(() => {
+        setReconnectNonce((value) => value + 1)
+      }, 2000)
     }
 
     return () => {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current)
+        reconnectTimeoutRef.current = null
+      }
       socket.close()
       socketRef.current = null
     }
@@ -144,6 +175,10 @@ export function ChannelPage() {
 
   function handleReconnect() {
     setSendError('')
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current)
+      reconnectTimeoutRef.current = null
+    }
     setReconnectNonce((value) => value + 1)
   }
 
@@ -186,7 +221,15 @@ export function ChannelPage() {
             Channel #{channel.name} · {messages.length} loaded message{messages.length === 1 ? '' : 's'}
           </p>
           <div className="flex items-center gap-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-concord-muted">
+            <p
+              className={`text-xs font-semibold uppercase tracking-[0.24em] ${
+                connectionState === 'connected'
+                  ? 'text-concord-accent'
+                  : connectionState === 'connecting'
+                    ? 'text-amber-300'
+                    : 'text-concord-danger'
+              }`}
+            >
               Live state: {connectionState}
             </p>
             {connectionState !== 'connected' ? (
@@ -201,7 +244,10 @@ export function ChannelPage() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-4 px-4 py-4 md:px-6 md:py-6">
+        <div
+          ref={messagesContainerRef}
+          className="flex max-h-[34rem] flex-col gap-4 overflow-y-auto px-4 py-4 md:px-6 md:py-6"
+        >
           {isLoadingMessages ? (
             <p className="text-sm text-concord-muted">Loading message history...</p>
           ) : null}
@@ -221,12 +267,21 @@ export function ChannelPage() {
 
           {!isLoadingMessages &&
             !messageError &&
-            messages.map((message) => (
+            messages.map((message, index) => {
+              const grouped = isSameAuthorBlock(message, messages[index - 1])
+
+              return (
               <article
                 key={message.id}
-                className="flex gap-4 rounded-[1.5rem] border border-transparent px-3 py-3 transition hover:border-concord-border/60 hover:bg-concord-panel-alt/50"
+                className={`flex rounded-[1.5rem] border px-3 py-3 transition hover:border-concord-border/60 hover:bg-concord-panel-alt/50 ${
+                  message.optimisticState === 'failed'
+                    ? 'border-concord-danger/30 bg-concord-danger/5'
+                    : 'border-transparent'
+                } ${grouped ? 'gap-4' : 'gap-4'}`}
               >
-                {message.avatar_url ? (
+                {grouped ? (
+                  <div className="h-11 w-11 shrink-0" />
+                ) : message.avatar_url ? (
                   <img
                     src={message.avatar_url}
                     alt={message.username}
@@ -242,29 +297,32 @@ export function ChannelPage() {
                 )}
 
                 <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                    <span className="font-semibold text-concord-text">{message.username}</span>
-                    <span className="text-xs uppercase tracking-[0.22em] text-concord-muted">
-                      {formatMessageTime(message.created_at)}
-                    </span>
-                    {message.optimisticState ? (
-                      <span
-                        className={`text-[10px] font-semibold uppercase tracking-[0.24em] ${
-                          message.optimisticState === 'failed'
-                            ? 'text-concord-danger'
-                            : 'text-concord-accent'
-                        }`}
-                      >
-                        {message.optimisticState}
+                  {!grouped ? (
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <span className="font-semibold text-concord-text">{message.username}</span>
+                      <span className="text-xs uppercase tracking-[0.22em] text-concord-muted">
+                        {formatMessageTime(message.created_at)}
                       </span>
-                    ) : null}
-                  </div>
-                  <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-concord-text/92">
+                      {message.optimisticState ? (
+                        <span
+                          className={`text-[10px] font-semibold uppercase tracking-[0.24em] ${
+                            message.optimisticState === 'failed'
+                              ? 'text-concord-danger'
+                              : 'text-concord-accent'
+                          }`}
+                        >
+                          {message.optimisticState}
+                        </span>
+                      ) : null}
+                    </div>
+                  ) : null}
+                  <p className={`${grouped ? '' : 'mt-2'} whitespace-pre-wrap text-sm leading-7 text-concord-text/92`}>
                     {message.content}
                   </p>
                 </div>
               </article>
-            ))}
+              )
+            })}
         </div>
 
         <div className="border-t border-concord-border/60 px-4 py-4 md:px-6">
@@ -290,8 +348,8 @@ export function ChannelPage() {
               <p className="text-sm text-concord-danger">{sendError}</p>
             ) : (
               <p className="text-sm text-concord-muted">
-                This slice adds optimistic sending and a manual reconnect path. More advanced
-                recovery behavior can come later.
+                This slice adds optimistic sending, automatic reconnect attempts, and a manual
+                reconnect escape hatch.
               </p>
             )}
           </form>

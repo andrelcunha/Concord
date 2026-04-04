@@ -218,6 +218,7 @@ These are useful areas to improve if you want to continue productizing the app.
 
 - [AGENTS.md](/home/andre/src/tests_and_examples/golang/Concord/AGENTS.md)
 - [CONTRIBUTING.md](/home/andre/src/tests_and_examples/golang/Concord/CONTRIBUTING.md)
+- [docs/bot_support_plan.md](/home/andre/src/tests_and_examples/golang/Concord/docs/bot_support_plan.md)
 - [docs/ARCHITECTURE.md](/home/andre/src/tests_and_examples/golang/Concord/docs/ARCHITECTURE.md)
 - [docs/product_vision.md](/home/andre/src/tests_and_examples/golang/Concord/docs/product_vision.md)
 - [docs/roadmap.md](/home/andre/src/tests_and_examples/golang/Concord/docs/roadmap.md)
