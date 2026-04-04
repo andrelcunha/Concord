@@ -37,6 +37,18 @@ func (r *Service) ListUserServers(ctx context.Context, userID int32) ([]dtos.Ser
 	return serversDto, nil
 }
 
+func (r *Service) ListDiscoverableServers(ctx context.Context, userID int32, query string) ([]dtos.ServerDto, error) {
+	serversDb, err := r.repo.ListDiscoverableServers(ctx, userID, query)
+	if err != nil {
+		return nil, err
+	}
+	serversDto := make([]dtos.ServerDto, len(serversDb))
+	for i, serverDb := range serversDb {
+		serversDto[i] = dtos.FromServerDbToServerDto(serverDb)
+	}
+	return serversDto, nil
+}
+
 func (s *Service) IsServerMember(ctx context.Context, serverID, userID int32) (bool, error) {
 	return s.repo.IsServerMember(ctx, serverID, userID)
 }

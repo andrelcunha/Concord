@@ -28,7 +28,7 @@ Features:
 - login and registration
 - server rail
 - direct-messages button placeholder in the left rail
-- user settings entry point placeholder
+- user settings route with account overview
 - channel sidebar for selected server
 - chat view
 - message history
