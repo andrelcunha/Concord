@@ -226,7 +226,44 @@ Suggested slices:
 4. better message grouping and timestamps
 5. message pagination or infinite scroll
 
-## Sprint 6: Account And Settings
+Current status:
+
+- optimistic sending is in place
+- reconnect behavior has started
+- message grouping has started
+
+## Sprint 6: Product UX And Server Usability
+
+Goal:
+
+- make the app feel more understandable and usable beyond the core chat transport loop
+
+Target outcome:
+
+- the UI feels less like an implementation demo and more like a coherent collaboration product
+- users can manage their own server and channel spaces from the frontend
+- joining an existing server becomes a real user flow instead of a database-only operation
+
+Suggested slices:
+
+1. remove or rewrite development-facing placeholder copy in the UI
+2. polish channel and server empty states
+3. add create-server flow in the frontend
+4. add create-channel flow in the frontend
+5. define and implement a join-server UX
+
+Join-server UX options to evaluate:
+
+- browse a list of joinable public servers
+- search servers by name
+- join through invitations
+
+Recommendation:
+
+- start with browsing and searching public servers
+- treat invitation flows as a later extension once the basic membership flow is stable
+
+## Sprint 7: Account And Settings
 
 Goal:
 
@@ -249,7 +286,7 @@ Possible initial fields:
 - nickname
 - avatar or profile photo
 
-## Sprint 7: Social And Realtime Enhancements
+## Sprint 8: Social And Realtime Enhancements
 
 Goal:
 
@@ -269,7 +306,7 @@ Related planning doc:
 - invites
 - role or permission behavior
 
-## Sprint 8: Rich Communication
+## Sprint 9: Rich Communication
 
 Goal:
 
@@ -282,7 +319,7 @@ Candidate slices:
 - better notifications
 - thread-like structures
 
-## Sprint 9: Voice And Video Exploration
+## Sprint 10: Voice And Video Exploration
 
 Goal:
 
@@ -305,6 +342,7 @@ The next best sequence is:
 2. begin Sprint 1 with layout-first React scaffolding
 3. build the canonical shell before migrating detailed views
 4. restore auth and navigation before chat polish
+5. move from transport-focused chat work into product usability and server management flows
 
 ## How To Choose The Next Slice
 

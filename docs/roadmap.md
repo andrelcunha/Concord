@@ -63,15 +63,34 @@ Learning value:
 - cache invalidation and pagination behavior
 - failure recovery in realtime UX
 
-## Phase 3: Social Structure
+## Phase 3: Product Usability
+
+Goal:
+
+- make the current product easier to understand and easier to use
+
+Features:
+
+- cleaner product-facing UI copy
+- better empty states
+- create server flow in the frontend
+- create channel flow in the frontend
+- clearer navigation outcomes after creating content
+
+Learning value:
+
+- onboarding design
+- product communication
+- usability of system capabilities
+
+## Phase 4: Social Structure
 
 Goal:
 
 - make servers feel more like collaborative spaces
 
 Features:
-
-- create and join server flows
+- join server flows
 - direct-message entry flow
 - better membership handling
 - roles or permissions foundation
@@ -82,7 +101,18 @@ Learning value:
 - domain modeling
 - multi-tenant style thinking
 
-## Phase 4: Collaboration Signals
+Possible join-server directions:
+
+- browse public servers
+- search by server name
+- join through invitation flows
+
+Recommended order:
+
+- browsing and searching first
+- invitations after the base membership UX is stable
+
+## Phase 5: Collaboration Signals
 
 Goal:
 
@@ -101,7 +131,7 @@ Learning value:
 - high-churn realtime events
 - consistency and ordering tradeoffs
 
-## Phase 5: Rich Communication
+## Phase 6: Rich Communication
 
 Goal:
 
@@ -120,7 +150,7 @@ Learning value:
 - indexing and retrieval
 - more complex product surfaces
 
-## Phase 5.5: Bots And Automation
+## Phase 6.5: Bots And Automation
 
 Goal:
 
@@ -141,7 +171,7 @@ Learning value:
 - event design
 - platform-vs-feature tradeoffs
 
-## Phase 6: Voice And Video Exploration
+## Phase 7: Voice And Video Exploration
 
 Goal:
 
