@@ -121,19 +121,6 @@ export function ServerRail() {
         >
           +
         </button>
-        <NavLink
-          to="/app/settings"
-          className={({ isActive }) =>
-            [
-              'flex h-12 w-12 items-center justify-center rounded-full border transition',
-              isActive
-                ? 'border-concord-accent bg-concord-panel-soft text-concord-accent'
-                : 'border-concord-border bg-concord-panel-alt text-concord-muted hover:border-concord-accent/60 hover:text-concord-text',
-            ].join(' ')
-          }
-        >
-          S
-        </NavLink>
       </div>
       {errorMessage ? (
         <div className="hidden max-w-[9rem] rounded-2xl border border-concord-danger/30 bg-concord-danger/10 px-3 py-2 text-xs leading-5 text-concord-danger md:block">
