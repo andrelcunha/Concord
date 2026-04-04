@@ -16,6 +16,7 @@ export function AppShell() {
   const fetchServers = useServersStore((state) => state.fetchServers)
   const clearServers = useServersStore((state) => state.clearServers)
   const fetchChannelsForServer = useChannelsStore((state) => state.fetchChannelsForServer)
+  const channelsByServerId = useChannelsStore((state) => state.channelsByServerId)
   const clearChannels = useChannelsStore((state) => state.clearChannels)
   const fetchMessagesForChannel = useChatStore((state) => state.fetchMessagesForChannel)
   const clearMessages = useChatStore((state) => state.clearMessages)
@@ -45,14 +46,16 @@ export function AppShell() {
 
   const isDm = location.pathname.startsWith('/app/dm')
   const isSettings = location.pathname === '/app/settings'
+  const activeChannels = params.serverId ? channelsByServerId[String(params.serverId)] ?? [] : []
+  const activeChannel = activeChannels.find((channel) => String(channel.id) === params.channelId)
   const title = isDm
     ? params.conversationId
       ? `DM · ${params.conversationId}`
       : 'Direct messages'
     : isSettings
-          ? 'Settings'
+      ? 'Settings'
     : params.channelId
-      ? `# ${params.channelId}`
+      ? `# ${activeChannel?.name ?? params.channelId}`
       : params.serverId
         ? 'Choose a channel'
         : 'Welcome to Concord'
@@ -60,8 +63,10 @@ export function AppShell() {
     ? 'Select a conversation from the sidebar.'
     : isSettings
       ? 'Review your account session and the profile tools we can grow next.'
+    : params.channelId
+      ? null
     : params.serverId
-      ? 'Use the sidebar to enter a channel.'
+      ? null
       : 'Pick a server or direct messages to get started.'
 
   return (
@@ -77,11 +82,8 @@ export function AppShell() {
         <main className="relative flex min-w-0 flex-1 flex-col border-l border-concord-border/60 bg-concord-night/70">
           <header className="flex flex-col gap-4 border-b border-concord-border/60 bg-concord-panel/80 px-6 py-4 backdrop-blur md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-concord-muted">
-                Concord
-              </p>
-              <h1 className="text-lg font-semibold">{title}</h1>
-              <p className="mt-1 text-sm text-concord-muted">{subtitle}</p>
+              {title ? <h1 className="text-lg font-semibold">{title}</h1> : null}
+              {subtitle ? <p className="mt-1 text-sm text-concord-muted">{subtitle}</p> : null}
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <button

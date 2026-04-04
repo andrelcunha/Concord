@@ -69,15 +69,14 @@ export function ChannelSidebar() {
     <>
     <aside className="flex w-full shrink-0 flex-col border-b border-concord-border/60 bg-concord-panel-alt/90 md:w-80 md:border-b-0 md:border-r">
       <div className="border-b border-concord-border/60 px-5 py-5">
-        <p className="text-xs font-semibold uppercase tracking-[0.32em] text-concord-muted">
+        <h2 className="text-xl font-semibold text-concord-text">
           {activeServerLabel}
-        </p>
-        <h2 className="mt-2 text-xl font-semibold">Channels</h2>
-        <p className="mt-2 text-sm leading-6 text-concord-muted">
-          {isDmRoute
-            ? 'Private conversations will appear here.'
-            : 'Pick a channel to open the conversation.'}
-        </p>
+        </h2>
+        {isDmRoute ? (
+          <p className="mt-2 text-sm leading-6 text-concord-muted">
+            Private conversations will appear here.
+          </p>
+        ) : null}
       </div>
 
       <div className="flex-1 overflow-auto px-4 py-4">
