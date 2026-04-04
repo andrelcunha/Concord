@@ -31,7 +31,7 @@ export function ChannelSidebar() {
   const activeServer = servers.find((server) => String(server.id) === params.serverId)
   const activeServerLabel = isDmRoute
     ? 'Direct Messages'
-    : activeServer?.name ?? 'Choose a server'
+    : activeServer?.name ?? 'No server selected'
   const activeChannels = params.serverId ? channelsByServerId[String(params.serverId)] ?? [] : []
   const isLoadingChannels = params.serverId ? loadingByServerId[String(params.serverId)] : false
   const channelError = params.serverId ? errorByServerId[String(params.serverId)] : ''
@@ -45,8 +45,8 @@ export function ChannelSidebar() {
         <h2 className="mt-2 text-xl font-semibold">Channels</h2>
         <p className="mt-2 text-sm leading-6 text-concord-muted">
           {isDmRoute
-            ? 'The DM branch already has its own route model. Real conversation data lands in a later slice.'
-            : 'Servers and channels now come from the backend. Message history and live chat land in the next sprint.'}
+            ? 'Private conversations will appear here.'
+            : 'Pick a channel to open the conversation.'}
         </p>
       </div>
 
@@ -124,10 +124,10 @@ export function ChannelSidebar() {
       <div className="border-t border-concord-border/60 px-4 py-4">
         <div className="rounded-2xl border border-concord-border bg-concord-panel/80 px-4 py-4">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-concord-muted">
-            Planned
+            Soon
           </p>
           <p className="mt-2 text-sm leading-6 text-concord-muted">
-            Channel creation controls, unread badges, and member-aware sections land in later slices.
+            Channel tools and member details will appear here as Concord grows.
           </p>
         </div>
       </div>

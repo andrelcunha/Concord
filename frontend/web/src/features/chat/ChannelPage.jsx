@@ -203,16 +203,9 @@ export function ChannelPage() {
   return (
     <section className="mx-auto flex max-w-5xl flex-col gap-5">
       <div className="rounded-[2rem] border border-concord-border bg-concord-panel/70 p-6 shadow-[0_25px_80px_rgba(0,0,0,0.25)]">
-        <p className="text-xs font-semibold uppercase tracking-[0.32em] text-concord-accent">
-          Message History
-        </p>
         <h2 className="mt-3 text-3xl font-semibold text-concord-text">
           {server?.name ?? `Server ${serverId}`} · #{channel.name}
         </h2>
-        <p className="mt-3 max-w-3xl text-sm leading-7 text-concord-muted">
-          Message history comes from the real backend route, and this slice adds basic live sending
-          and WebSocket updates to complete the first end-to-end chat loop.
-        </p>
       </div>
 
       <div className="overflow-hidden rounded-[2rem] border border-concord-border bg-concord-panel/70 shadow-[0_25px_80px_rgba(0,0,0,0.25)]">

@@ -49,12 +49,14 @@ export function AppShell() {
       : 'Direct messages'
     : params.channelId
       ? `# ${params.channelId}`
-      : 'Choose your next conversation'
+      : params.serverId
+        ? 'Choose a channel'
+        : 'Welcome to Concord'
   const subtitle = isDm
-    ? 'Placeholder inbox route with the final shell structure already in place.'
+    ? 'Select a conversation from the sidebar.'
     : params.serverId
-      ? `Server context: ${params.serverId}`
-      : 'Sprint 1 keeps this screen structural so later slices can focus on integration.'
+      ? 'Use the sidebar to enter a channel.'
+      : 'Pick a server or direct messages to get started.'
 
   return (
     <div className="min-h-screen bg-concord-night text-concord-text">
@@ -77,9 +79,6 @@ export function AppShell() {
               >
                 Settings
               </NavLink>
-              <div className="rounded-full border border-concord-border bg-concord-panel-alt px-4 py-2 text-sm text-concord-muted">
-                Layout-first slice
-              </div>
               <button
                 type="button"
                 onClick={handleLogout}

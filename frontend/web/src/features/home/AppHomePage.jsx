@@ -15,11 +15,11 @@ export function AppHomePage() {
       <PlaceholderPanel
         eyebrow="Shell"
         title="Choose a server or direct messages"
-        description="Server navigation now comes from the real backend. This home route stays useful as the safe landing page when no concrete conversation is selected yet."
+        description="Pick where you want to chat. Your servers appear below, and direct messages are available from the left rail."
         actions={[
-          'Left rail now renders backend-backed servers.',
-          'The URL remains the source of truth for active server context.',
-          'Channel fetching and chat history still belong to later slices.',
+          'Open a server to browse its channels.',
+          'Use direct messages for one-to-one conversation.',
+          'Settings stay available from the top bar.',
         ]}
       />
 
