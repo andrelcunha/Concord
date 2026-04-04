@@ -1,0 +1,15 @@
+meta {
+  name: Join Server
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/servers/{{serverId}}/join
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

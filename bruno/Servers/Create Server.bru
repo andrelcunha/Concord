@@ -1,0 +1,26 @@
+meta {
+  name: Create Server
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/servers
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "My Server",
+    "is_public": true
+  }
+}
