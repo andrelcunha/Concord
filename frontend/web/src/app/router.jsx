@@ -14,6 +14,7 @@ import { ChannelPage } from '@/features/chat/ChannelPage'
 import { DmIndexPage } from '@/features/dm/DmIndexPage'
 import { DmConversationPage } from '@/features/dm/DmConversationPage'
 import { SettingsPage } from '@/features/settings/SettingsPage'
+import { ServerPage } from '@/features/servers/ServerPage'
 import { useSessionStore } from '@/lib/sessionStore'
 
 function RootRedirect() {
@@ -54,6 +55,10 @@ const router = createBrowserRouter([
           {
             index: true,
             element: <AppHomePage />,
+          },
+          {
+            path: 'servers/:serverId',
+            element: <ServerPage />,
           },
           {
             path: 'servers/:serverId/channels/:channelId',

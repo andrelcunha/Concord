@@ -19,6 +19,9 @@ func (s *Service) CreateServer(ctx context.Context, name string, userID int32, i
 	if err != nil {
 		return dtos.ServerDto{}, err
 	}
+	if err := s.repo.CreateDefaultChannel(ctx, serverDb.ID, userID); err != nil {
+		return dtos.ServerDto{}, err
+	}
 	return dtos.FromServerDbToServerDto(serverDb), nil
 }
 

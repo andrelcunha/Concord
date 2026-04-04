@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 
 import { PlaceholderPanel } from '@/features/shared/PlaceholderPanel'
 import { useServersStore } from '@/features/servers/store'
+import { getServerRoute } from '@/lib/navigation'
 
 export function AppHomePage() {
   const servers = useServersStore((state) => state.servers)
@@ -43,7 +44,7 @@ export function AppHomePage() {
             {servers.map((server) => (
               <Link
                 key={server.id}
-                to={`/app/servers/${server.id}/channels/general`}
+                to={getServerRoute(server.id)}
                 className="rounded-[1.5rem] border border-concord-border bg-concord-panel-alt/80 p-5 transition hover:border-concord-accent/60 hover:bg-concord-panel-soft"
               >
                 <p className="text-lg font-semibold text-concord-text">{server.name}</p>

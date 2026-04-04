@@ -2,6 +2,7 @@ import React from 'react'
 import { NavLink } from 'react-router-dom'
 
 import { useServersStore } from '@/features/servers/store'
+import { getServerRoute } from '@/lib/navigation'
 
 function getServerBadge(name) {
   const parts = name
@@ -67,7 +68,7 @@ export function ServerRail() {
           servers.map((server) => (
             <NavLink
               key={server.id}
-              to={`/app/servers/${server.id}/channels/general`}
+              to={getServerRoute(server.id)}
               className={railLinkClass}
               title={server.name}
             >

@@ -14,6 +14,7 @@ type repository struct {
 
 type Repository interface {
 	CreateServer(ctx context.Context, name string, userID int32, isPublic bool) (db.Server, error)
+	CreateDefaultChannel(ctx context.Context, serverID, userID int32) error
 	ListUserServers(ctx context.Context, userID int32) ([]db.Server, error)
 	IsServerMember(ctx context.Context, serverID, userID int32) (bool, error)
 	JoinServer(ctx context.Context, serverID, userID int32) error
@@ -32,6 +33,15 @@ func (r *repository) CreateServer(ctx context.Context, name string, userID int32
 		IsPublic:  pgtype.Bool{Bool: isPublic, Valid: true},
 	}
 	return r.db.CreateServer(ctx, arg)
+}
+
+func (r *repository) CreateDefaultChannel(ctx context.Context, serverID, userID int32) error {
+	_, err := r.db.CreateChannel(ctx, db.CreateChannelParams{
+		Name:      "general",
+		CreatedBy: pgtype.Int4{Int32: userID, Valid: true},
+		ServerID:  serverID,
+	})
+	return err
 }
 
 func (r *repository) ListUserServers(ctx context.Context, userID int32) ([]db.Server, error) {
