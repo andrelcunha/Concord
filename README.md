@@ -225,3 +225,4 @@ These are useful areas to improve if you want to continue productizing the app.
 - [docs/frontend_architecture.md](/home/andre/src/tests_and_examples/golang/Concord/docs/frontend_architecture.md)
 - [docs/frontend_design_direction.md](/home/andre/src/tests_and_examples/golang/Concord/docs/frontend_design_direction.md)
 - [docs/implementation_plan.md](/home/andre/src/tests_and_examples/golang/Concord/docs/implementation_plan.md)
+- [docs/dm_friendship_plan.md](/home/andre/src/tests_and_examples/golang/Concord/docs/dm_friendship_plan.md)

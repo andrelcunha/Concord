@@ -9,7 +9,10 @@ import (
 
 	"github.com/andrelcunha/Concord/backend/config"
 	"github.com/andrelcunha/Concord/backend/internal/auth"
+	"github.com/andrelcunha/Concord/backend/internal/blocks"
 	"github.com/andrelcunha/Concord/backend/internal/channels"
+	"github.com/andrelcunha/Concord/backend/internal/dms"
+	"github.com/andrelcunha/Concord/backend/internal/friendships"
 	"github.com/andrelcunha/Concord/backend/internal/messages"
 	"github.com/andrelcunha/Concord/backend/internal/middleware"
 	"github.com/andrelcunha/Concord/backend/internal/servers"
@@ -48,6 +51,22 @@ func main() {
 	// Initialize channels service
 	channelsService := channels.NewService(channels.NewRepository(dbPool), serversRepo)
 	channels.RegisterChannelsRoutes(api, channelsService)
+
+	// Initialize blocks service
+	blocksRepo := blocks.NewRepository(dbPool)
+	blocksService := blocks.NewService(blocksRepo)
+	blocks.RegisterBlockRoutes(api, blocksService)
+
+	// Initialize friendships service
+	friendshipsRepo := friendships.NewRepository(dbPool)
+	friendshipsService := friendships.NewService(friendshipsRepo, blocksRepo)
+	friendships.RegisterFriendshipRoutes(api, friendshipsService)
+
+	// Initialize direct messages service
+	dmRepo := dms.NewRepository(dbPool)
+	dmService := dms.NewService(dmRepo, friendshipsRepo, blocksRepo, redisClient)
+	dms.RegisterDmWebSocketRoutes(api, dmService)
+	dms.RegisterDmRoutes(api, dmService)
 
 	// Initialize websocket service
 	msgRepo := messages.NewRepository(dbPool)

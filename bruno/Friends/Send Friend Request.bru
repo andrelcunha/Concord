@@ -1,0 +1,25 @@
+meta {
+  name: Send Friend Request
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/friends/requests
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "target_user_id": 2
+  }
+}

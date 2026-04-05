@@ -1,0 +1,15 @@
+meta {
+  name: List Blocked Users
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/blocks
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

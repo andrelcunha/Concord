@@ -82,7 +82,8 @@ When adding features:
 2. Follow into the service
 3. Confirm repository and SQL coverage
 4. Regenerate `sqlc` if schema or query files change
-5. Update docs when behavior changes
+5. Update the Bruno collection in `bruno/` for every new or changed HTTP API route
+6. Update docs when behavior changes
 
 When touching realtime behavior:
 

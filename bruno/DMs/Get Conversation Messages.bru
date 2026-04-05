@@ -1,0 +1,15 @@
+meta {
+  name: Get Conversation Messages
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/api/dms/1/messages
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

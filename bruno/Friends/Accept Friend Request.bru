@@ -1,0 +1,15 @@
+meta {
+  name: Accept Friend Request
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/friends/requests/1/accept
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}

@@ -305,6 +305,7 @@ Candidate slices:
 
 Related planning doc:
 
+- `docs/dm_friendship_plan.md`
 - `docs/bot_support_plan.md`
 - presence
 - typing indicators

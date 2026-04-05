@@ -1,0 +1,15 @@
+meta {
+  name: Reject Friend Request
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/api/friends/requests/1/reject
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
