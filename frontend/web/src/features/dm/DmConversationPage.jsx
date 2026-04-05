@@ -68,6 +68,7 @@ export function DmConversationPage() {
 
   const conversation =
     conversations.find((item) => String(item.id) === conversationId) ?? null
+  const hasConversation = Boolean(conversation)
   const messages = messagesByConversationId[String(conversationId)] ?? []
   const isLoadingMessages = loadingByConversationId[String(conversationId)]
   const messageError = errorByConversationId[String(conversationId)]
@@ -101,7 +102,7 @@ export function DmConversationPage() {
   }, [messages.length, conversationId])
 
   React.useEffect(() => {
-    if (!conversationId || !accessToken || !conversation) {
+    if (!conversationId || !accessToken || !hasConversation) {
       return undefined
     }
 
@@ -152,9 +153,9 @@ export function DmConversationPage() {
     }
   }, [
     accessToken,
-    conversation,
     conversationId,
     currentUser?.username,
+    hasConversation,
     reconnectNonce,
     reconcileIncomingMessage,
     setConnectionState,
