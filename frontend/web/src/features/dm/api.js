@@ -46,3 +46,17 @@ export async function sendFriendRequestRequest(targetUserId) {
   })
   return response.data
 }
+
+export async function listIncomingFriendRequestsRequest() {
+  const response = await apiClient.get('/api/friends/requests/incoming')
+  return response.data
+}
+
+export async function acceptFriendRequestRequest(friendshipId) {
+  const response = await apiClient.post(`/api/friends/requests/${friendshipId}/accept`)
+  return response.data
+}
+
+export async function rejectFriendRequestRequest(friendshipId) {
+  await apiClient.post(`/api/friends/requests/${friendshipId}/reject`)
+}

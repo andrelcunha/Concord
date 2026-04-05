@@ -6,9 +6,12 @@ import {
   hideDmConversationRequest,
   listDmConversationsRequest,
   listDmMessagesRequest,
+  listIncomingFriendRequestsRequest,
   listFriendsRequest,
+  rejectFriendRequestRequest,
   searchUsersRequest,
   sendFriendRequestRequest,
+  acceptFriendRequestRequest,
 } from '@/features/dm/api'
 
 export const useDmStore = create((set, get) => ({
@@ -19,6 +22,10 @@ export const useDmStore = create((set, get) => ({
   friends: [],
   isLoadingFriends: false,
   friendsError: '',
+  incomingRequests: [],
+  isLoadingIncomingRequests: false,
+  incomingRequestsError: '',
+  requestActionById: {},
   searchedUsers: [],
   isSearchingUsers: false,
   searchUsersError: '',
@@ -109,6 +116,101 @@ export const useDmStore = create((set, get) => ({
         isLoadingFriends: false,
         friendsError: error.response?.data?.error ?? 'Failed to load friends',
       })
+    }
+  },
+
+  fetchIncomingRequests: async () => {
+    if (get().isLoadingIncomingRequests) {
+      return
+    }
+
+    set({
+      isLoadingIncomingRequests: true,
+      incomingRequestsError: '',
+    })
+
+    try {
+      const data = await listIncomingFriendRequestsRequest()
+      set({
+        incomingRequests: data.requests ?? [],
+        isLoadingIncomingRequests: false,
+      })
+    } catch (error) {
+      set({
+        isLoadingIncomingRequests: false,
+        incomingRequestsError: error.response?.data?.error ?? 'Failed to load incoming requests',
+      })
+    }
+  },
+
+  acceptFriendRequest: async (friendshipId) => {
+    if (!friendshipId || get().requestActionById[String(friendshipId)]) {
+      return false
+    }
+
+    set((state) => ({
+      requestActionById: {
+        ...state.requestActionById,
+        [String(friendshipId)]: 'accepting',
+      },
+      incomingRequestsError: '',
+    }))
+
+    try {
+      await acceptFriendRequestRequest(friendshipId)
+      set((state) => ({
+        incomingRequests: state.incomingRequests.filter((request) => request.id !== friendshipId),
+        requestActionById: {
+          ...state.requestActionById,
+          [String(friendshipId)]: '',
+        },
+      }))
+      await get().fetchFriends()
+      return true
+    } catch (error) {
+      set((state) => ({
+        requestActionById: {
+          ...state.requestActionById,
+          [String(friendshipId)]: '',
+        },
+        incomingRequestsError: error.response?.data?.error ?? 'Failed to accept the request',
+      }))
+      return false
+    }
+  },
+
+  rejectFriendRequest: async (friendshipId) => {
+    if (!friendshipId || get().requestActionById[String(friendshipId)]) {
+      return false
+    }
+
+    set((state) => ({
+      requestActionById: {
+        ...state.requestActionById,
+        [String(friendshipId)]: 'rejecting',
+      },
+      incomingRequestsError: '',
+    }))
+
+    try {
+      await rejectFriendRequestRequest(friendshipId)
+      set((state) => ({
+        incomingRequests: state.incomingRequests.filter((request) => request.id !== friendshipId),
+        requestActionById: {
+          ...state.requestActionById,
+          [String(friendshipId)]: '',
+        },
+      }))
+      return true
+    } catch (error) {
+      set((state) => ({
+        requestActionById: {
+          ...state.requestActionById,
+          [String(friendshipId)]: '',
+        },
+        incomingRequestsError: error.response?.data?.error ?? 'Failed to reject the request',
+      }))
+      return false
     }
   },
 
@@ -413,6 +515,10 @@ export const useDmStore = create((set, get) => ({
       friends: [],
       isLoadingFriends: false,
       friendsError: '',
+      incomingRequests: [],
+      isLoadingIncomingRequests: false,
+      incomingRequestsError: '',
+      requestActionById: {},
       searchedUsers: [],
       isSearchingUsers: false,
       searchUsersError: '',
