@@ -7,8 +7,9 @@ This collection mirrors the currently wired backend routes in `backend/cmd/api/m
 1. Open the `bruno/` folder in Bruno.
 2. Select the `local` environment.
 3. Run `Auth/Login`, then copy the returned tokens into the environment variables.
-4. Use the protected requests under `Servers`, `Channels`, `Messages`, `Friends`, and `DMs`.
+4. Use the protected requests under `Servers`, `Channels`, `Messages`, `Friends`, `DMs`, and `Blocks`.
 5. For friendship flows, the `Friends` folder now includes search, send request, incoming/outgoing lists, and accept/reject requests.
+6. The `Blocks` folder covers list, block, and unblock operations used by the DM/friendship UX.
 
 ## Environment variables
 
