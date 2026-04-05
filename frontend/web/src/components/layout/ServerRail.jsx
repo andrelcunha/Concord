@@ -1,6 +1,7 @@
 import React from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 
+import { ConcordLogo } from '@/components/icons/ConcordLogo'
 import { useServersStore } from '@/features/servers/store'
 import { getServerRoute } from '@/lib/navigation'
 
@@ -23,10 +24,10 @@ function getServerBadge(name) {
 
 function railLinkClass({ isActive }) {
   return [
-    'flex h-13 w-13 items-center justify-center rounded-[1.35rem] border text-sm font-bold transition',
+    'flex h-13 w-13 items-center justify-center rounded-[1.1rem] text-sm font-bold transition',
     isActive
-      ? 'border-concord-accent bg-concord-accent text-slate-950 shadow-[0_0_20px_rgba(90,209,178,0.28)]'
-      : 'border-concord-border bg-concord-panel-alt text-concord-text hover:-translate-y-0.5 hover:border-concord-accent/60 hover:bg-concord-panel-soft',
+      ? 'bg-concord-accent text-slate-950 shadow-[0_0_20px_rgba(90,209,178,0.28)]'
+      : 'bg-concord-panel-alt text-concord-text hover:-translate-y-0.5 hover:bg-concord-panel-soft',
   ].join(' ')
 }
 
@@ -66,24 +67,21 @@ export function ServerRail() {
 
   return (
     <>
-    <aside className="flex w-full flex-row items-center gap-3 overflow-x-auto border-b border-concord-border/60 bg-concord-panel px-4 py-4 md:min-h-0 md:w-24 md:flex-col md:items-center md:gap-4 md:overflow-y-auto md:overflow-x-hidden md:border-b-0 md:border-r md:px-4 md:py-5">
-      <div className="hidden md:block">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.34em] text-concord-muted">
-          Rail
-        </p>
-      </div>
+    <aside className="flex w-full flex-row items-center gap-3 overflow-x-auto border-b border-concord-border/60 bg-[#141920] px-4 py-4 md:min-h-0 md:w-24 md:flex-col md:items-center md:gap-4 md:overflow-y-auto md:overflow-x-hidden md:border-b-0 md:border-r md:px-4 md:py-5">
       <NavLink
         to="/app/dm"
         className={({ isActive }) =>
           [
-            'flex h-14 w-14 shrink-0 items-center justify-center rounded-[1.6rem] border transition',
+            'flex h-14 w-14 shrink-0 items-center justify-center rounded-[1.1rem] transition',
             isActive
-              ? 'border-concord-accent bg-concord-accent text-slate-950'
-              : 'border-concord-border bg-concord-night text-concord-text hover:border-concord-accent/60 hover:bg-concord-panel-soft',
+              ? 'bg-concord-accent text-slate-950'
+              : 'bg-concord-panel-alt text-concord-text hover:bg-concord-panel-soft',
           ].join(' ')
         }
+        aria-label="Direct messages"
+        title="Direct messages"
       >
-        DM
+        {() => <ConcordLogo className="h-[3.4rem] w-[3.4rem]" />}
       </NavLink>
 
       <div className="hidden h-px w-10 bg-concord-border md:block" />
