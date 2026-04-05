@@ -167,8 +167,9 @@ SELECT
     u.avatar_url,
     u.avatar_color
 FROM friendships f
-JOIN users u ON u.id = f.user_id
-WHERE f.friend_id = $1
+JOIN users u ON u.id = f.requester_id
+WHERE (f.user_id = $1 OR f.friend_id = $1)
+  AND f.requester_id <> $1
   AND f.status = 'pending'
 ORDER BY f.created_at ASC
 `
@@ -185,8 +186,8 @@ type ListIncomingFriendRequestsRow struct {
 	AvatarColor pgtype.Text
 }
 
-func (q *Queries) ListIncomingFriendRequests(ctx context.Context, friendID int32) ([]ListIncomingFriendRequestsRow, error) {
-	rows, err := q.db.Query(ctx, listIncomingFriendRequests, friendID)
+func (q *Queries) ListIncomingFriendRequests(ctx context.Context, userID int32) ([]ListIncomingFriendRequestsRow, error) {
+	rows, err := q.db.Query(ctx, listIncomingFriendRequests, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -227,8 +228,13 @@ SELECT
     u.avatar_url,
     u.avatar_color
 FROM friendships f
-JOIN users u ON u.id = f.friend_id
-WHERE f.user_id = $1
+JOIN users u
+    ON u.id = CASE
+        WHEN f.user_id = $1 THEN f.friend_id
+        ELSE f.user_id
+    END
+WHERE (f.user_id = $1 OR f.friend_id = $1)
+  AND f.requester_id = $1
   AND f.status = 'pending'
 ORDER BY f.created_at ASC
 `

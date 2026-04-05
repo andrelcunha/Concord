@@ -52,8 +52,9 @@ SELECT
     u.avatar_url,
     u.avatar_color
 FROM friendships f
-JOIN users u ON u.id = f.user_id
-WHERE f.friend_id = $1
+JOIN users u ON u.id = f.requester_id
+WHERE (f.user_id = $1 OR f.friend_id = $1)
+  AND f.requester_id <> $1
   AND f.status = 'pending'
 ORDER BY f.created_at ASC;
 
@@ -69,7 +70,12 @@ SELECT
     u.avatar_url,
     u.avatar_color
 FROM friendships f
-JOIN users u ON u.id = f.friend_id
-WHERE f.user_id = $1
+JOIN users u
+    ON u.id = CASE
+        WHEN f.user_id = $1 THEN f.friend_id
+        ELSE f.user_id
+    END
+WHERE (f.user_id = $1 OR f.friend_id = $1)
+  AND f.requester_id = $1
   AND f.status = 'pending'
 ORDER BY f.created_at ASC;
