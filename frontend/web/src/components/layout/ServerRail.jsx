@@ -98,6 +98,7 @@ export function ServerRail() {
               key={server.id}
               to={getServerRoute(server.id)}
               className={railLinkClass}
+              aria-label={server.name}
               title={server.name}
             >
               {getServerBadge(server.name)}
