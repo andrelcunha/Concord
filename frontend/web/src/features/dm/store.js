@@ -7,6 +7,8 @@ import {
   listDmConversationsRequest,
   listDmMessagesRequest,
   listFriendsRequest,
+  searchUsersRequest,
+  sendFriendRequestRequest,
 } from '@/features/dm/api'
 
 export const useDmStore = create((set, get) => ({
@@ -17,6 +19,10 @@ export const useDmStore = create((set, get) => ({
   friends: [],
   isLoadingFriends: false,
   friendsError: '',
+  searchedUsers: [],
+  isSearchingUsers: false,
+  searchUsersError: '',
+  pendingRequestUserIds: {},
   isCreatingConversation: false,
   hidingConversationId: null,
   messagesByConversationId: {},
@@ -103,6 +109,76 @@ export const useDmStore = create((set, get) => ({
         isLoadingFriends: false,
         friendsError: error.response?.data?.error ?? 'Failed to load friends',
       })
+    }
+  },
+
+  searchUsers: async (query) => {
+    const trimmedQuery = query.trim()
+    if (!trimmedQuery) {
+      set({
+        searchedUsers: [],
+        searchUsersError: '',
+        isSearchingUsers: false,
+      })
+      return
+    }
+
+    if (get().isSearchingUsers) {
+      return
+    }
+
+    set({
+      isSearchingUsers: true,
+      searchUsersError: '',
+    })
+
+    try {
+      const data = await searchUsersRequest(trimmedQuery)
+      set({
+        searchedUsers: data.users ?? [],
+        isSearchingUsers: false,
+      })
+    } catch (error) {
+      set({
+        searchedUsers: [],
+        isSearchingUsers: false,
+        searchUsersError: error.response?.data?.error ?? 'Failed to search users',
+      })
+    }
+  },
+
+  sendFriendRequest: async (targetUserId) => {
+    if (!targetUserId || get().pendingRequestUserIds[String(targetUserId)]) {
+      return false
+    }
+
+    set((state) => ({
+      pendingRequestUserIds: {
+        ...state.pendingRequestUserIds,
+        [String(targetUserId)]: true,
+      },
+      searchUsersError: '',
+    }))
+
+    try {
+      await sendFriendRequestRequest(targetUserId)
+      set((state) => ({
+        searchedUsers: state.searchedUsers.filter((user) => user.user_id !== targetUserId),
+        pendingRequestUserIds: {
+          ...state.pendingRequestUserIds,
+          [String(targetUserId)]: false,
+        },
+      }))
+      return true
+    } catch (error) {
+      set((state) => ({
+        pendingRequestUserIds: {
+          ...state.pendingRequestUserIds,
+          [String(targetUserId)]: false,
+        },
+        searchUsersError: error.response?.data?.error ?? 'Failed to send friend request',
+      }))
+      return false
     }
   },
 
@@ -337,6 +413,10 @@ export const useDmStore = create((set, get) => ({
       friends: [],
       isLoadingFriends: false,
       friendsError: '',
+      searchedUsers: [],
+      isSearchingUsers: false,
+      searchUsersError: '',
+      pendingRequestUserIds: {},
       isCreatingConversation: false,
       hidingConversationId: null,
       messagesByConversationId: {},

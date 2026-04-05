@@ -30,3 +30,19 @@ export async function listFriendsRequest() {
   const response = await apiClient.get('/api/friends')
   return response.data
 }
+
+export async function searchUsersRequest(query) {
+  const response = await apiClient.get('/api/friends/search', {
+    params: {
+      query,
+    },
+  })
+  return response.data
+}
+
+export async function sendFriendRequestRequest(targetUserId) {
+  const response = await apiClient.post('/api/friends/requests', {
+    target_user_id: Number(targetUserId),
+  })
+  return response.data
+}
