@@ -24,6 +24,8 @@ export function AppShell() {
   const fetchMessagesForChannel = useChatStore((state) => state.fetchMessagesForChannel)
   const clearMessages = useChatStore((state) => state.clearMessages)
   const fetchDmConversations = useDmStore((state) => state.fetchConversations)
+  const fetchFriends = useDmStore((state) => state.fetchFriends)
+  const fetchIncomingRequests = useDmStore((state) => state.fetchIncomingRequests)
   const conversations = useDmStore((state) => state.conversations)
   const conversationsById = useDmStore((state) => state.conversationsById)
   const fetchDmConversation = useDmStore((state) => state.fetchConversation)
@@ -32,7 +34,6 @@ export function AppShell() {
   const isLoadingIncomingRequests = useDmStore((state) => state.isLoadingIncomingRequests)
   const incomingRequestsError = useDmStore((state) => state.incomingRequestsError)
   const requestActionById = useDmStore((state) => state.requestActionById)
-  const fetchIncomingRequests = useDmStore((state) => state.fetchIncomingRequests)
   const acceptFriendRequest = useDmStore((state) => state.acceptFriendRequest)
   const rejectFriendRequest = useDmStore((state) => state.rejectFriendRequest)
   const [isInboxOpen, setIsInboxOpen] = React.useState(false)
@@ -40,7 +41,31 @@ export function AppShell() {
   React.useEffect(() => {
     fetchServers()
     fetchDmConversations()
-  }, [fetchDmConversations, fetchServers])
+    fetchFriends()
+    fetchIncomingRequests()
+  }, [fetchDmConversations, fetchFriends, fetchIncomingRequests, fetchServers])
+
+  React.useEffect(() => {
+    function refreshDmState() {
+      if (document.visibilityState !== 'visible') {
+        return
+      }
+
+      fetchDmConversations()
+      fetchFriends()
+      fetchIncomingRequests()
+    }
+
+    const intervalId = window.setInterval(refreshDmState, 10000)
+    document.addEventListener('visibilitychange', refreshDmState)
+    window.addEventListener('focus', refreshDmState)
+
+    return () => {
+      window.clearInterval(intervalId)
+      document.removeEventListener('visibilitychange', refreshDmState)
+      window.removeEventListener('focus', refreshDmState)
+    }
+  }, [fetchDmConversations, fetchFriends, fetchIncomingRequests])
 
   React.useEffect(() => {
     if (params.serverId) {
