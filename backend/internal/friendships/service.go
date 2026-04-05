@@ -183,6 +183,13 @@ func (s *Service) ListFriends(ctx context.Context, userID int32) ([]dtos.FriendD
 
 	friends := make([]dtos.FriendDto, 0, len(rows))
 	for _, row := range rows {
+		if _, err := s.blockRepo.GetBlock(ctx, userID, row.ID); err == nil {
+			continue
+		}
+		if _, err := s.blockRepo.GetBlock(ctx, row.ID, userID); err == nil {
+			continue
+		}
+
 		friends = append(friends, dtos.FriendDto{
 			UserSummaryDto: userSummary(row.ID, row.Username, row.AvatarUrl.String, row.AvatarColor.String),
 			FriendedAt:     row.FriendedAt.Time.Format("2006-01-02T15:04:05Z07:00"),

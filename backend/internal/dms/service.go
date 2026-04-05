@@ -36,6 +36,16 @@ func normalizePair(a, b int32) (int32, int32) {
 	return b, a
 }
 
+func (s *Service) isBlocked(ctx context.Context, userID, otherUserID int32) bool {
+	if _, err := s.blockRepo.GetBlock(ctx, userID, otherUserID); err == nil {
+		return true
+	}
+	if _, err := s.blockRepo.GetBlock(ctx, otherUserID, userID); err == nil {
+		return true
+	}
+	return false
+}
+
 func (s *Service) ListConversations(ctx context.Context, userID int32) ([]dtos.DmConversationDto, error) {
 	rows, err := s.repo.ListVisibleDmConversationsForUser(ctx, userID)
 	if err != nil {
@@ -44,6 +54,10 @@ func (s *Service) ListConversations(ctx context.Context, userID int32) ([]dtos.D
 
 	conversations := make([]dtos.DmConversationDto, 0, len(rows))
 	for _, row := range rows {
+		if s.isBlocked(ctx, userID, row.OtherUserID) {
+			continue
+		}
+
 		dto := dtos.DmConversationDto{
 			ID:        row.ID,
 			CreatedAt: row.CreatedAt.Time.Format("2006-01-02T15:04:05Z07:00"),
@@ -65,10 +79,7 @@ func (s *Service) ListConversations(ctx context.Context, userID int32) ([]dtos.D
 }
 
 func (s *Service) CreateOrGetConversation(ctx context.Context, userID, otherUserID int32) (dtos.DmConversationDto, error) {
-	if _, err := s.blockRepo.GetBlock(ctx, userID, otherUserID); err == nil {
-		return dtos.DmConversationDto{}, ErrDmBlockedRelationship
-	}
-	if _, err := s.blockRepo.GetBlock(ctx, otherUserID, userID); err == nil {
+	if s.isBlocked(ctx, userID, otherUserID) {
 		return dtos.DmConversationDto{}, ErrDmBlockedRelationship
 	}
 
@@ -98,6 +109,9 @@ func (s *Service) GetConversation(ctx context.Context, userID, conversationID in
 	if err != nil {
 		return dtos.DmConversationDto{}, ErrDmForbidden
 	}
+	if s.isBlocked(ctx, userID, row.OtherUserID) {
+		return dtos.DmConversationDto{}, ErrDmBlockedRelationship
+	}
 
 	return dtos.DmConversationDto{
 		ID:        row.ID,
@@ -121,6 +135,13 @@ func (s *Service) HideConversation(ctx context.Context, userID, conversationID i
 func (s *Service) ListMessages(ctx context.Context, userID, conversationID, limit, offset int32) ([]dtos.DmMessageDto, error) {
 	if _, err := s.repo.GetDmConversationParticipant(ctx, conversationID, userID); err != nil {
 		return nil, ErrDmForbidden
+	}
+	conversation, err := s.repo.GetDmConversationForUser(ctx, conversationID, userID)
+	if err != nil {
+		return nil, ErrDmForbidden
+	}
+	if s.isBlocked(ctx, userID, conversation.OtherUserID) {
+		return nil, ErrDmBlockedRelationship
 	}
 
 	rows, err := s.repo.ListDmMessagesByConversation(ctx, conversationID, limit, offset)
@@ -148,16 +169,18 @@ func (s *Service) StoreMessage(ctx context.Context, userID, conversationID int32
 	if _, err := s.repo.GetDmConversationParticipant(ctx, conversationID, userID); err != nil {
 		return dtos.DmMessageDto{}, ErrDmForbidden
 	}
+	conversation, err := s.repo.GetDmConversationForUser(ctx, conversationID, userID)
+	if err != nil {
+		return dtos.DmMessageDto{}, ErrDmForbidden
+	}
+	if s.isBlocked(ctx, userID, conversation.OtherUserID) {
+		return dtos.DmMessageDto{}, ErrDmBlockedRelationship
+	}
 
 	message, err := s.repo.CreateDmMessage(ctx, conversationID, userID, content)
 	if err != nil {
 		log.Printf("CreateDmMessage error: %v", err)
 		return dtos.DmMessageDto{}, err
-	}
-
-	conversation, err := s.repo.GetDmConversationForUser(ctx, conversationID, userID)
-	if err != nil {
-		return dtos.DmMessageDto{}, ErrDmForbidden
 	}
 
 	return dtos.DmMessageDto{
