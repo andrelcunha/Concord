@@ -110,7 +110,7 @@ export function ChannelSidebar() {
         ) : (
           <section className="mb-6">
             <h3 className="mb-3 px-2 text-xs font-semibold uppercase tracking-[0.28em] text-concord-muted">
-              Text Channels
+              Channels
             </h3>
 
             {isLoadingChannels ? (

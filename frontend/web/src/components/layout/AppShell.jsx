@@ -14,9 +14,11 @@ export function AppShell() {
   const params = useParams()
   const logout = useSessionStore((state) => state.logout)
   const fetchServers = useServersStore((state) => state.fetchServers)
+  const servers = useServersStore((state) => state.servers)
   const clearServers = useServersStore((state) => state.clearServers)
   const fetchChannelsForServer = useChannelsStore((state) => state.fetchChannelsForServer)
   const channelsByServerId = useChannelsStore((state) => state.channelsByServerId)
+  const loadingByServerId = useChannelsStore((state) => state.loadingByServerId)
   const clearChannels = useChannelsStore((state) => state.clearChannels)
   const fetchMessagesForChannel = useChatStore((state) => state.fetchMessagesForChannel)
   const clearMessages = useChatStore((state) => state.clearMessages)
@@ -46,7 +48,9 @@ export function AppShell() {
 
   const isDm = location.pathname.startsWith('/app/dm')
   const isSettings = location.pathname === '/app/settings'
+  const activeServer = servers.find((server) => String(server.id) === params.serverId)
   const activeChannels = params.serverId ? channelsByServerId[String(params.serverId)] ?? [] : []
+  const isLoadingServerChannels = params.serverId ? loadingByServerId[String(params.serverId)] : false
   const activeChannel = activeChannels.find((channel) => String(channel.id) === params.channelId)
   const title = isDm
     ? params.conversationId
@@ -56,8 +60,8 @@ export function AppShell() {
       ? 'Settings'
     : params.channelId
       ? `# ${activeChannel?.name ?? params.channelId}`
-      : params.serverId
-        ? 'Choose a channel'
+    : params.serverId
+        ? activeServer?.name ?? (isLoadingServerChannels ? null : 'Server')
         : 'Welcome to Concord'
   const subtitle = isDm
     ? 'Select a conversation from the sidebar.'

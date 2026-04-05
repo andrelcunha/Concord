@@ -30,6 +30,28 @@ function isSameAuthorBlock(currentMessage, previousMessage) {
   return currentMessage.username === previousMessage.username
 }
 
+function MessageSkeleton({ grouped = false, widthClass = 'w-64' }) {
+  return (
+    <article className="flex gap-4 rounded-[1.5rem] px-3 py-3">
+      {grouped ? (
+        <div className="h-11 w-11 shrink-0" />
+      ) : (
+        <div className="h-11 w-11 shrink-0 rounded-full bg-concord-panel-soft/80" />
+      )}
+
+      <div className="min-w-0 flex-1">
+        {!grouped ? (
+          <div className="flex items-center gap-3">
+            <div className="h-4 w-28 rounded-full bg-concord-panel-soft/80" />
+            <div className="h-3 w-16 rounded-full bg-concord-panel-soft/60" />
+          </div>
+        ) : null}
+        <div className={`${grouped ? '' : 'mt-3'} h-4 rounded-full bg-concord-panel-soft/75 ${widthClass}`} />
+      </div>
+    </article>
+  )
+}
+
 export function ChannelPage() {
   const { serverId, channelId } = useParams()
   const servers = useServersStore((state) => state.servers)
@@ -203,7 +225,7 @@ export function ChannelPage() {
   return (
     <section className="flex h-full min-h-0 flex-col">
       <div className="flex min-h-0 flex-1 flex-col">
-        {connectionState !== 'connected' ? (
+        {connectionState === 'connecting' || connectionState === 'disconnected' ? (
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-concord-border bg-concord-panel-alt/70 px-4 py-3">
             <p
               className={`text-sm ${
@@ -229,7 +251,12 @@ export function ChannelPage() {
           className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-1 py-2 md:px-2 md:py-3"
         >
           {isLoadingMessages ? (
-            <p className="text-sm text-concord-muted">Loading message history...</p>
+            <div className="flex flex-col gap-2">
+              <MessageSkeleton widthClass="w-72 max-w-[70%]" />
+              <MessageSkeleton grouped widthClass="w-56 max-w-[55%]" />
+              <MessageSkeleton widthClass="w-80 max-w-[75%]" />
+              <MessageSkeleton grouped widthClass="w-64 max-w-[60%]" />
+            </div>
           ) : null}
 
           {messageError ? (
