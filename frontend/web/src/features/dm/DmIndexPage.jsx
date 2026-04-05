@@ -54,6 +54,20 @@ export function DmIndexPage() {
   }, [fetchFriends])
 
   React.useEffect(() => {
+    function refreshFriends() {
+      fetchFriends()
+    }
+
+    window.addEventListener('focus', refreshFriends)
+    document.addEventListener('visibilitychange', refreshFriends)
+
+    return () => {
+      window.removeEventListener('focus', refreshFriends)
+      document.removeEventListener('visibilitychange', refreshFriends)
+    }
+  }, [fetchFriends])
+
+  React.useEffect(() => {
     if (mode !== 'add-friend') {
       return
     }
