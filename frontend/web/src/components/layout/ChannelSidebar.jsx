@@ -276,19 +276,7 @@ export function ChannelSidebar() {
 
       <div className="border-t border-concord-border/60 px-4 py-4">
         {isDmRoute ? (
-          selectedConversation ? (
-            <div className="rounded-2xl border border-concord-border bg-concord-panel/80 px-4 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-concord-muted">
-                Conversation
-              </p>
-              <p className="mt-2 text-sm text-concord-text">{selectedConversation.other_user.username}</p>
-              {selectedConversation.last_message ? (
-                <p className="mt-2 text-sm leading-6 text-concord-muted">
-                  {selectedConversation.last_message}
-                </p>
-              ) : null}
-            </div>
-          ) : null
+          null
         ) : (
           <button
             type="button"
