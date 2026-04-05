@@ -66,7 +66,7 @@ export function ServerRail() {
 
   return (
     <>
-    <aside className="flex w-full flex-row items-center gap-3 overflow-x-auto border-b border-concord-border/60 bg-concord-panel px-4 py-4 md:w-24 md:flex-col md:items-center md:gap-4 md:overflow-visible md:border-b-0 md:border-r md:px-4 md:py-5">
+    <aside className="flex w-full flex-row items-center gap-3 overflow-x-auto border-b border-concord-border/60 bg-concord-panel px-4 py-4 md:min-h-0 md:w-24 md:flex-col md:items-center md:gap-4 md:overflow-y-auto md:overflow-x-hidden md:border-b-0 md:border-r md:px-4 md:py-5">
       <div className="hidden md:block">
         <p className="text-[10px] font-semibold uppercase tracking-[0.34em] text-concord-muted">
           Rail

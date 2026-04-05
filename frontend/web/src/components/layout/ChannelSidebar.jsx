@@ -67,7 +67,7 @@ export function ChannelSidebar() {
 
   return (
     <>
-    <aside className="flex w-full shrink-0 flex-col border-b border-concord-border/60 bg-concord-panel-alt/90 md:w-80 md:border-b-0 md:border-r">
+    <aside className="flex w-full shrink-0 flex-col border-b border-concord-border/60 bg-concord-panel-alt/90 md:min-h-0 md:w-80 md:border-b-0 md:border-r">
       <div className="border-b border-concord-border/60 px-5 py-5">
         <h2 className="text-xl font-semibold text-concord-text">
           {activeServerLabel}
@@ -79,7 +79,7 @@ export function ChannelSidebar() {
         ) : null}
       </div>
 
-      <div className="flex-1 overflow-auto px-4 py-4">
+      <div className="flex-1 overflow-auto px-4 py-4 md:min-h-0">
         {isDmRoute ? (
           dmGroups.map((group) => (
             <section key={group.label} className="mb-6">

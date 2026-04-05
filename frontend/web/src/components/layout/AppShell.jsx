@@ -70,16 +70,16 @@ export function AppShell() {
       : 'Pick a server or direct messages to get started.'
 
   return (
-    <div className="min-h-screen bg-concord-night text-concord-text">
-      <div className="flex min-h-screen flex-col md:flex-row">
-        <div className="flex w-full shrink-0 flex-col md:w-[26rem]">
-          <div className="flex w-full flex-col md:flex-1 md:flex-row">
+    <div className="h-screen overflow-hidden bg-concord-night text-concord-text">
+      <div className="flex h-full flex-col md:flex-row">
+        <div className="flex w-full shrink-0 flex-col md:h-full md:w-[26rem] md:min-h-0">
+          <div className="flex w-full flex-col md:min-h-0 md:flex-1 md:flex-row">
             <ServerRail />
             <ChannelSidebar />
           </div>
           <UserPanel />
         </div>
-        <main className="relative flex min-w-0 flex-1 flex-col border-l border-concord-border/60 bg-concord-night/70">
+        <main className="relative flex min-h-0 min-w-0 flex-1 flex-col border-l border-concord-border/60 bg-concord-night/70">
           <header className="flex flex-col gap-4 border-b border-concord-border/60 bg-concord-panel/80 px-6 py-4 backdrop-blur md:flex-row md:items-center md:justify-between">
             <div>
               {title ? <h1 className="text-lg font-semibold">{title}</h1> : null}
@@ -95,7 +95,7 @@ export function AppShell() {
               </button>
             </div>
           </header>
-          <div className="flex-1 overflow-auto p-4 md:p-6">
+          <div className="min-h-0 flex-1 overflow-auto p-4 md:p-6">
             <Outlet />
           </div>
         </main>
