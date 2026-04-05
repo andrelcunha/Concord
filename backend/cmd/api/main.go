@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/andrelcunha/Concord/backend/internal/channels"
 	"github.com/andrelcunha/Concord/backend/internal/messages"
 	"github.com/andrelcunha/Concord/backend/internal/middleware"
+	"github.com/andrelcunha/Concord/backend/internal/servers"
 	"github.com/andrelcunha/Concord/backend/internal/websocket"
 	"github.com/avast/retry-go/v4"
 	"github.com/gofiber/fiber/v2"
@@ -20,14 +22,16 @@ import (
 )
 
 func main() {
-	dbPool := initilizeDatabase()
+	cfg := config.LoadConfig()
+
+	dbPool := initilizeDatabase(cfg)
 	defer dbPool.Close()
 
-	redisClient := initializeRedis()
+	redisClient := initializeRedis(cfg)
 	defer redisClient.Close()
 
 	app := initializeFiber()
-	secret := config.Config("SECRET")
+	secret := cfg.SecretKey
 
 	// Initialize auth service
 	authRepo := auth.NewRepository(dbPool)
@@ -36,8 +40,13 @@ func main() {
 
 	api := AddProtectedRoutes(app, secret)
 
+	// Initialize servers service
+	serversRepo := servers.NewRepository(dbPool)
+	serversService := servers.NewService(serversRepo)
+	servers.RegisterServersRoutes(api, serversService)
+
 	// Initialize channels service
-	channelsService := channels.NewService(channels.NewRepository(dbPool))
+	channelsService := channels.NewService(channels.NewRepository(dbPool), serversRepo)
 	channels.RegisterChannelsRoutes(api, channelsService)
 
 	// Initialize websocket service
@@ -51,21 +60,20 @@ func main() {
 
 	addCustom404Handler(app)
 	// Start server
-	log.Fatal(app.Listen(":3000"))
+	log.Fatal(app.Listen(fmt.Sprintf(":%d", cfg.Port)))
 }
 
-func initilizeDatabase() *pgxpool.Pool {
-	databaseURL := config.Config("DATABASE_URL")
-	dbPool, err := pgxpool.New(context.Background(), databaseURL)
+func initilizeDatabase(cfg config.Config) *pgxpool.Pool {
+	dbPool, err := pgxpool.New(context.Background(), cfg.DatabaseURL)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v\n", err)
 	}
 	return dbPool
 }
 
-func initializeRedis() *redis.Client {
+func initializeRedis(cfg config.Config) *redis.Client {
 
-	opt, err := redis.ParseURL(config.Config("REDIS_URL"))
+	opt, err := redis.ParseURL(cfg.RedisURL)
 	if err != nil {
 		log.Fatalf("Failed to parse Redis URL: %v\n", err)
 	}

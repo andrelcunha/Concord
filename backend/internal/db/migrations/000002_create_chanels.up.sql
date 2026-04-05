@@ -1,6 +1,6 @@
 CREATE TABLE channels (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    created_by INTEGER REFERENCES users(id),
+    created_by INT REFERENCES users(id),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
