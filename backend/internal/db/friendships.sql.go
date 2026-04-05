@@ -12,24 +12,31 @@ import (
 )
 
 const createFriendship = `-- name: CreateFriendship :one
-INSERT INTO friendships (user_id, friend_id, status)
-VALUES ($1, $2, $3)
-RETURNING id, user_id, friend_id, status, created_at
+INSERT INTO friendships (user_id, friend_id, requester_id, status)
+VALUES ($1, $2, $3, $4)
+RETURNING id, user_id, friend_id, requester_id, status, created_at
 `
 
 type CreateFriendshipParams struct {
-	UserID   int32
-	FriendID int32
-	Status   string
+	UserID      int32
+	FriendID    int32
+	RequesterID int32
+	Status      string
 }
 
 func (q *Queries) CreateFriendship(ctx context.Context, arg CreateFriendshipParams) (Friendship, error) {
-	row := q.db.QueryRow(ctx, createFriendship, arg.UserID, arg.FriendID, arg.Status)
+	row := q.db.QueryRow(ctx, createFriendship,
+		arg.UserID,
+		arg.FriendID,
+		arg.RequesterID,
+		arg.Status,
+	)
 	var i Friendship
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
 		&i.FriendID,
+		&i.RequesterID,
 		&i.Status,
 		&i.CreatedAt,
 	)
@@ -51,8 +58,28 @@ func (q *Queries) DeleteFriendship(ctx context.Context, arg DeleteFriendshipPara
 	return err
 }
 
+const getFriendshipByID = `-- name: GetFriendshipByID :one
+SELECT id, user_id, friend_id, requester_id, status, created_at
+FROM friendships
+WHERE id = $1
+`
+
+func (q *Queries) GetFriendshipByID(ctx context.Context, id int32) (Friendship, error) {
+	row := q.db.QueryRow(ctx, getFriendshipByID, id)
+	var i Friendship
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.FriendID,
+		&i.RequesterID,
+		&i.Status,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getFriendshipByUsers = `-- name: GetFriendshipByUsers :one
-SELECT id, user_id, friend_id, status, created_at
+SELECT id, user_id, friend_id, requester_id, status, created_at
 FROM friendships
 WHERE user_id = $1 AND friend_id = $2
 `
@@ -69,6 +96,7 @@ func (q *Queries) GetFriendshipByUsers(ctx context.Context, arg GetFriendshipByU
 		&i.ID,
 		&i.UserID,
 		&i.FriendID,
+		&i.RequesterID,
 		&i.Status,
 		&i.CreatedAt,
 	)
@@ -132,6 +160,7 @@ SELECT
     f.id,
     f.user_id,
     f.friend_id,
+    f.requester_id,
     f.status,
     f.created_at,
     u.username,
@@ -148,6 +177,7 @@ type ListIncomingFriendRequestsRow struct {
 	ID          int32
 	UserID      int32
 	FriendID    int32
+	RequesterID int32
 	Status      string
 	CreatedAt   pgtype.Timestamptz
 	Username    string
@@ -168,6 +198,7 @@ func (q *Queries) ListIncomingFriendRequests(ctx context.Context, friendID int32
 			&i.ID,
 			&i.UserID,
 			&i.FriendID,
+			&i.RequesterID,
 			&i.Status,
 			&i.CreatedAt,
 			&i.Username,
@@ -189,6 +220,7 @@ SELECT
     f.id,
     f.user_id,
     f.friend_id,
+    f.requester_id,
     f.status,
     f.created_at,
     u.username,
@@ -205,6 +237,7 @@ type ListOutgoingFriendRequestsRow struct {
 	ID          int32
 	UserID      int32
 	FriendID    int32
+	RequesterID int32
 	Status      string
 	CreatedAt   pgtype.Timestamptz
 	Username    string
@@ -225,6 +258,7 @@ func (q *Queries) ListOutgoingFriendRequests(ctx context.Context, userID int32) 
 			&i.ID,
 			&i.UserID,
 			&i.FriendID,
+			&i.RequesterID,
 			&i.Status,
 			&i.CreatedAt,
 			&i.Username,
@@ -245,7 +279,7 @@ const updateFriendshipStatus = `-- name: UpdateFriendshipStatus :one
 UPDATE friendships
 SET status = $3
 WHERE user_id = $1 AND friend_id = $2
-RETURNING id, user_id, friend_id, status, created_at
+RETURNING id, user_id, friend_id, requester_id, status, created_at
 `
 
 type UpdateFriendshipStatusParams struct {
@@ -261,6 +295,7 @@ func (q *Queries) UpdateFriendshipStatus(ctx context.Context, arg UpdateFriendsh
 		&i.ID,
 		&i.UserID,
 		&i.FriendID,
+		&i.RequesterID,
 		&i.Status,
 		&i.CreatedAt,
 	)

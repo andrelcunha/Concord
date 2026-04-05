@@ -1,18 +1,23 @@
 -- name: CreateFriendship :one
-INSERT INTO friendships (user_id, friend_id, status)
-VALUES ($1, $2, $3)
-RETURNING id, user_id, friend_id, status, created_at;
+INSERT INTO friendships (user_id, friend_id, requester_id, status)
+VALUES ($1, $2, $3, $4)
+RETURNING id, user_id, friend_id, requester_id, status, created_at;
 
 -- name: GetFriendshipByUsers :one
-SELECT id, user_id, friend_id, status, created_at
+SELECT id, user_id, friend_id, requester_id, status, created_at
 FROM friendships
 WHERE user_id = $1 AND friend_id = $2;
+
+-- name: GetFriendshipByID :one
+SELECT id, user_id, friend_id, requester_id, status, created_at
+FROM friendships
+WHERE id = $1;
 
 -- name: UpdateFriendshipStatus :one
 UPDATE friendships
 SET status = $3
 WHERE user_id = $1 AND friend_id = $2
-RETURNING id, user_id, friend_id, status, created_at;
+RETURNING id, user_id, friend_id, requester_id, status, created_at;
 
 -- name: DeleteFriendship :exec
 DELETE FROM friendships
@@ -40,6 +45,7 @@ SELECT
     f.id,
     f.user_id,
     f.friend_id,
+    f.requester_id,
     f.status,
     f.created_at,
     u.username,
@@ -56,6 +62,7 @@ SELECT
     f.id,
     f.user_id,
     f.friend_id,
+    f.requester_id,
     f.status,
     f.created_at,
     u.username,

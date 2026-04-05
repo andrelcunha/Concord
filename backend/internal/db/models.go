@@ -49,11 +49,12 @@ type DmMessage struct {
 }
 
 type Friendship struct {
-	ID        int32
-	UserID    int32
-	FriendID  int32
-	Status    string
-	CreatedAt pgtype.Timestamptz
+	ID          int32
+	UserID      int32
+	FriendID    int32
+	RequesterID int32
+	Status      string
+	CreatedAt   pgtype.Timestamptz
 }
 
 type Message struct {

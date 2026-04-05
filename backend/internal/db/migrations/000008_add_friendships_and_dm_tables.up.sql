@@ -2,14 +2,17 @@ CREATE TABLE friendships (
     id SERIAL PRIMARY KEY,
     user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     friend_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    requester_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     status TEXT NOT NULL CHECK (status IN ('pending', 'accepted', 'rejected')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT friendships_user_pair_order CHECK (user_id < friend_id),
+    CONSTRAINT friendships_requester_valid CHECK (requester_id = user_id OR requester_id = friend_id),
     CONSTRAINT friendships_user_pair_unique UNIQUE (user_id, friend_id)
 );
 
 CREATE INDEX idx_friendships_user_id ON friendships(user_id);
 CREATE INDEX idx_friendships_friend_id ON friendships(friend_id);
+CREATE INDEX idx_friendships_requester_id ON friendships(requester_id);
 CREATE INDEX idx_friendships_status ON friendships(status);
 
 CREATE TABLE blocks (
