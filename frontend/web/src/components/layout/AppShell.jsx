@@ -70,7 +70,9 @@ export function AppShell() {
     conversations.find((conversation) => String(conversation.id) === params.conversationId) ??
     conversationsById[String(params.conversationId)]
   const title = isDm
-    ? params.conversationId
+    ? location.pathname === '/app/dm'
+      ? 'Friends'
+      : params.conversationId
       ? activeConversation?.other_user?.username ?? 'Direct message'
       : 'Direct messages'
     : isSettings
@@ -81,7 +83,9 @@ export function AppShell() {
         ? activeServer?.name ?? (isLoadingServerChannels ? null : 'Server')
         : 'Welcome to Concord'
   const subtitle = isDm
-    ? params.conversationId
+    ? location.pathname === '/app/dm'
+      ? null
+      : params.conversationId
       ? null
       : 'Pick a friend to continue an existing conversation or start a new one.'
     : isSettings

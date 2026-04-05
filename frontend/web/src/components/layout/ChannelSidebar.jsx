@@ -115,6 +115,24 @@ export function ChannelSidebar() {
   return (
     <>
     <aside className="flex w-full shrink-0 flex-col border-b border-concord-border/60 bg-concord-panel-alt/90 md:min-h-0 md:w-80 md:border-b-0 md:border-r">
+      {isDmRoute ? (
+        <div className="border-b border-concord-border/60 px-4 py-4">
+          <NavLink
+            to="/app/dm"
+            className={({ isActive }) =>
+              [
+                'flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition',
+                isActive
+                  ? 'bg-concord-panel-soft text-concord-text'
+                  : 'text-concord-muted hover:bg-concord-panel-soft/70 hover:text-concord-text',
+              ].join(' ')
+            }
+          >
+            <span className="text-base">Friends</span>
+          </NavLink>
+        </div>
+      ) : null}
+
       <div className="border-b border-concord-border/60 px-5 py-5">
         <div className="flex items-center justify-between gap-4">
           <h2 className="text-xl font-semibold text-concord-text">

@@ -1,49 +1,177 @@
 import React from 'react'
-import { Navigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 import { useDmStore } from '@/features/dm/store'
+import { getDmRoute } from '@/lib/navigation'
 
-function ConversationSkeleton() {
+function FriendsSkeleton() {
   return (
-    <div className="space-y-3 rounded-[2rem] border border-concord-border bg-concord-panel/70 p-6">
-      <div className="h-4 w-28 rounded-full bg-concord-panel-soft/80" />
-      <div className="h-8 w-60 rounded-full bg-concord-panel-soft/70" />
-      <div className="h-4 w-80 max-w-full rounded-full bg-concord-panel-soft/60" />
+    <div className="rounded-[2rem] border border-concord-border bg-concord-panel/70 p-6">
+      <div className="space-y-4">
+        <div className="h-10 w-64 rounded-2xl bg-concord-panel-soft/75" />
+        <div className="h-12 w-full rounded-2xl bg-concord-panel-soft/70" />
+      </div>
+
+      <div className="mt-6 space-y-3">
+        <div className="h-4 w-24 rounded-full bg-concord-panel-soft/70" />
+        {[0, 1, 2].map((item) => (
+          <div
+            key={item}
+            className="flex items-center gap-4 rounded-2xl border border-concord-border bg-concord-panel-alt/75 px-4 py-3"
+          >
+            <div className="h-11 w-11 rounded-full bg-concord-panel-soft/80" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <div className="h-4 w-36 rounded-full bg-concord-panel-soft/80" />
+              <div className="h-3 w-20 rounded-full bg-concord-panel-soft/60" />
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
 
 export function DmIndexPage() {
-  const conversations = useDmStore((state) => state.conversations)
-  const isLoadingConversations = useDmStore((state) => state.isLoadingConversations)
-  const conversationsError = useDmStore((state) => state.conversationsError)
+  const navigate = useNavigate()
+  const friends = useDmStore((state) => state.friends)
+  const isLoadingFriends = useDmStore((state) => state.isLoadingFriends)
+  const friendsError = useDmStore((state) => state.friendsError)
+  const fetchFriends = useDmStore((state) => state.fetchFriends)
+  const createOrGetConversation = useDmStore((state) => state.createOrGetConversation)
+  const isCreatingConversation = useDmStore((state) => state.isCreatingConversation)
+  const [activeFilter, setActiveFilter] = React.useState('online')
+  const [search, setSearch] = React.useState('')
 
-  if (!isLoadingConversations && conversations.length > 0) {
-    return <Navigate to={`/app/dm/${conversations[0].id}`} replace />
+  React.useEffect(() => {
+    fetchFriends()
+  }, [fetchFriends])
+
+  const normalizedSearch = search.trim().toLowerCase()
+  const onlineFriends = friends
+  const visibleFriends = (activeFilter === 'online' ? onlineFriends : friends).filter((friend) =>
+    friend.username.toLowerCase().includes(normalizedSearch),
+  )
+
+  async function handleOpenFriend(friend) {
+    const conversation = await createOrGetConversation(friend.user_id)
+    if (!conversation) {
+      return
+    }
+
+    navigate(getDmRoute(conversation.id))
   }
 
-  if (isLoadingConversations) {
+  if (isLoadingFriends && friends.length === 0) {
     return (
       <section className="mx-auto flex max-w-4xl flex-col gap-4">
-        <ConversationSkeleton />
-        <ConversationSkeleton />
+        <FriendsSkeleton />
       </section>
     )
   }
 
   return (
-    <section className="mx-auto max-w-4xl rounded-[2rem] border border-concord-border bg-concord-panel/70 p-8 shadow-[0_25px_80px_rgba(0,0,0,0.25)]">
-      <p className="text-xs font-semibold uppercase tracking-[0.32em] text-concord-accent">
-        Direct Messages
-      </p>
-      <h2 className="mt-3 text-3xl font-semibold text-concord-text">
-        {conversationsError ? 'We could not load your conversations' : 'Pick a conversation or start a new one'}
-      </h2>
-      <p className="mt-4 max-w-2xl text-base leading-7 text-concord-muted">
-        {conversationsError
-          ? conversationsError
-          : 'Your direct messages live in the sidebar. Use the + button to start a new conversation with one of your friends.'}
-      </p>
+    <section className="mx-auto flex max-w-5xl flex-col rounded-[2rem] border border-concord-border bg-concord-panel/70 shadow-[0_25px_80px_rgba(0,0,0,0.25)]">
+      <div className="border-b border-concord-border/60 px-6 py-5">
+        <div className="flex flex-wrap items-center gap-3 text-sm text-concord-muted">
+          <span className="text-base font-semibold text-concord-text">Friends</span>
+          <button
+            type="button"
+            onClick={() => setActiveFilter('online')}
+            className={`rounded-full px-3 py-1.5 transition ${
+              activeFilter === 'online'
+                ? 'bg-concord-accent text-slate-950'
+                : 'bg-concord-panel-alt text-concord-muted hover:text-concord-text'
+            }`}
+          >
+            Online
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveFilter('all')}
+            className={`rounded-full px-3 py-1.5 transition ${
+              activeFilter === 'all'
+                ? 'bg-concord-accent text-slate-950'
+                : 'bg-concord-panel-alt text-concord-muted hover:text-concord-text'
+            }`}
+          >
+            All
+          </button>
+          <button
+            type="button"
+            disabled
+            title="Friend requests UI is the next DM slice."
+            className="rounded-full bg-concord-panel-alt px-3 py-1.5 text-concord-muted opacity-70"
+          >
+            Add Friend
+          </button>
+        </div>
+      </div>
+
+      <div className="border-b border-concord-border/60 px-6 py-4">
+        <label className="block">
+          <span className="sr-only">Search friends</span>
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search"
+            className="w-full rounded-2xl border border-concord-border bg-concord-panel-alt px-4 py-3 text-sm text-concord-text outline-none transition focus:border-concord-accent"
+          />
+        </label>
+      </div>
+
+      <div className="flex-1 px-6 py-5">
+        <div className="mb-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-concord-muted">
+            {activeFilter === 'online' ? `Online - ${onlineFriends.length}` : `All - ${friends.length}`}
+          </p>
+        </div>
+
+        {friendsError ? (
+          <p className="rounded-2xl border border-concord-danger/30 bg-concord-danger/10 px-4 py-3 text-sm text-concord-danger">
+            {friendsError}
+          </p>
+        ) : null}
+
+        {!friendsError && visibleFriends.length === 0 ? (
+          <div className="rounded-2xl border border-concord-border bg-concord-panel-alt/80 px-5 py-6 text-sm leading-6 text-concord-muted">
+            {search.trim()
+              ? 'No friends match this search.'
+              : 'Your accepted friends will appear here. Clicking one opens or starts a direct message.'}
+          </div>
+        ) : null}
+
+        <div className="space-y-2">
+          {visibleFriends.map((friend) => (
+            <button
+              key={friend.user_id}
+              type="button"
+              onClick={() => handleOpenFriend(friend)}
+              disabled={isCreatingConversation}
+              className="flex w-full items-center gap-4 rounded-2xl border border-concord-border bg-concord-panel-alt/70 px-4 py-3 text-left transition hover:border-concord-accent hover:bg-concord-panel-soft disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {friend.avatar_url ? (
+                <img
+                  src={friend.avatar_url}
+                  alt={friend.username}
+                  className="h-11 w-11 rounded-full object-cover"
+                />
+              ) : (
+                <div
+                  className="flex h-11 w-11 items-center justify-center rounded-full text-sm font-bold text-slate-950"
+                  style={{ backgroundColor: friend.avatar_color || '#5ad1b2' }}
+                >
+                  {friend.username.slice(0, 1).toUpperCase()}
+                </div>
+              )}
+
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-semibold text-concord-text">{friend.username}</p>
+                <p className="mt-1 text-sm text-concord-muted">Online</p>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
     </section>
   )
 }
