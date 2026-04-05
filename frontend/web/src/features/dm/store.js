@@ -6,6 +6,7 @@ import {
   createOrGetDmConversationRequest,
   getDmConversationRequest,
   hideDmConversationRequest,
+  listBlockedUsersRequest,
   listDmConversationsRequest,
   listDmMessagesRequest,
   listIncomingFriendRequestsRequest,
@@ -14,6 +15,7 @@ import {
   removeFriendRequest,
   searchUsersRequest,
   sendFriendRequestRequest,
+  unblockUserRequest,
 } from '@/features/dm/api'
 
 export const useDmStore = create((set, get) => ({
@@ -31,6 +33,9 @@ export const useDmStore = create((set, get) => ({
   hasLoadedIncomingRequests: false,
   incomingRequestsError: '',
   requestActionById: {},
+  blockedUsers: [],
+  isLoadingBlockedUsers: false,
+  blockedUsersError: '',
   searchedUsers: [],
   isSearchingUsers: false,
   searchUsersError: '',
@@ -160,6 +165,33 @@ export const useDmStore = create((set, get) => ({
         isLoadingIncomingRequests: false,
         hasLoadedIncomingRequests: true,
         incomingRequestsError: error.response?.data?.error ?? 'Failed to load incoming requests',
+      })
+    }
+  },
+
+  fetchBlockedUsers: async ({ silent = false } = {}) => {
+    if (get().isLoadingBlockedUsers) {
+      return
+    }
+
+    if (!silent) {
+      set({
+        isLoadingBlockedUsers: true,
+        blockedUsersError: '',
+      })
+    }
+
+    try {
+      const data = await listBlockedUsersRequest()
+      set({
+        blockedUsers: data.users ?? [],
+        isLoadingBlockedUsers: false,
+        ...(silent ? {} : { blockedUsersError: '' }),
+      })
+    } catch (error) {
+      set({
+        isLoadingBlockedUsers: false,
+        blockedUsersError: error.response?.data?.error ?? 'Failed to load blocked users',
       })
     }
   },
@@ -384,6 +416,15 @@ export const useDmStore = create((set, get) => ({
           friends: state.friends.filter((friend) => friend.user_id !== blockedUserId),
           conversations: nextConversations,
           conversationsById: nextConversationsById,
+          blockedUsers: state.blockedUsers.some((user) => user.blocked_id === blockedUserId)
+            ? state.blockedUsers
+            : [
+                ...state.blockedUsers,
+                {
+                  blocked_id: blockedUserId,
+                  user: state.friends.find((friend) => friend.user_id === blockedUserId) ?? null,
+                },
+              ],
           friendActionByUserId: {
             ...state.friendActionByUserId,
             [String(blockedUserId)]: '',
@@ -398,6 +439,41 @@ export const useDmStore = create((set, get) => ({
           [String(blockedUserId)]: '',
         },
         friendsError: error.response?.data?.error ?? 'Failed to block user',
+      }))
+      return false
+    }
+  },
+
+  unblockUser: async (blockedUserId) => {
+    if (!blockedUserId || get().friendActionByUserId[String(blockedUserId)]) {
+      return false
+    }
+
+    set((state) => ({
+      friendActionByUserId: {
+        ...state.friendActionByUserId,
+        [String(blockedUserId)]: 'unblocking',
+      },
+      blockedUsersError: '',
+    }))
+
+    try {
+      await unblockUserRequest(blockedUserId)
+      set((state) => ({
+        blockedUsers: state.blockedUsers.filter((user) => user.blocked_id !== blockedUserId),
+        friendActionByUserId: {
+          ...state.friendActionByUserId,
+          [String(blockedUserId)]: '',
+        },
+      }))
+      return true
+    } catch (error) {
+      set((state) => ({
+        friendActionByUserId: {
+          ...state.friendActionByUserId,
+          [String(blockedUserId)]: '',
+        },
+        blockedUsersError: error.response?.data?.error ?? 'Failed to unblock user',
       }))
       return false
     }
@@ -641,6 +717,9 @@ export const useDmStore = create((set, get) => ({
       hasLoadedIncomingRequests: false,
       incomingRequestsError: '',
       requestActionById: {},
+      blockedUsers: [],
+      isLoadingBlockedUsers: false,
+      blockedUsersError: '',
       searchedUsers: [],
       isSearchingUsers: false,
       searchUsersError: '',

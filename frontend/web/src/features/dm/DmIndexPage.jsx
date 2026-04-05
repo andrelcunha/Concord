@@ -37,6 +37,10 @@ export function DmIndexPage() {
   const isLoadingFriends = useDmStore((state) => state.isLoadingFriends)
   const friendsError = useDmStore((state) => state.friendsError)
   const fetchFriends = useDmStore((state) => state.fetchFriends)
+  const blockedUsers = useDmStore((state) => state.blockedUsers)
+  const isLoadingBlockedUsers = useDmStore((state) => state.isLoadingBlockedUsers)
+  const blockedUsersError = useDmStore((state) => state.blockedUsersError)
+  const fetchBlockedUsers = useDmStore((state) => state.fetchBlockedUsers)
   const searchedUsers = useDmStore((state) => state.searchedUsers)
   const isSearchingUsers = useDmStore((state) => state.isSearchingUsers)
   const searchUsersError = useDmStore((state) => state.searchUsersError)
@@ -46,6 +50,7 @@ export function DmIndexPage() {
   const createOrGetConversation = useDmStore((state) => state.createOrGetConversation)
   const removeFriend = useDmStore((state) => state.removeFriend)
   const blockUser = useDmStore((state) => state.blockUser)
+  const unblockUser = useDmStore((state) => state.unblockUser)
   const friendActionByUserId = useDmStore((state) => state.friendActionByUserId)
   const isCreatingConversation = useDmStore((state) => state.isCreatingConversation)
   const [activeFilter, setActiveFilter] = React.useState('online')
@@ -55,7 +60,8 @@ export function DmIndexPage() {
 
   React.useEffect(() => {
     fetchFriends()
-  }, [fetchFriends])
+    fetchBlockedUsers()
+  }, [fetchBlockedUsers, fetchFriends])
 
   React.useEffect(() => {
     function refreshFriends() {
@@ -99,6 +105,9 @@ export function DmIndexPage() {
   const visibleFriends = (activeFilter === 'online' ? onlineFriends : friends).filter((friend) =>
     friend.username.toLowerCase().includes(normalizedSearch),
   )
+  const visibleBlockedUsers = blockedUsers.filter((user) =>
+    (user.user?.username ?? '').toLowerCase().includes(normalizedSearch),
+  )
 
   async function handleOpenFriend(friend) {
     const conversation = await createOrGetConversation(friend.user_id)
@@ -125,6 +134,14 @@ export function DmIndexPage() {
     event.stopPropagation()
     const blocked = await blockUser(userId)
     if (blocked) {
+      setOpenMenuUserId(null)
+    }
+  }
+
+  async function handleUnblockUser(event, userId) {
+    event.stopPropagation()
+    const unblocked = await unblockUser(userId)
+    if (unblocked) {
       setOpenMenuUserId(null)
     }
   }
@@ -163,6 +180,17 @@ export function DmIndexPage() {
             }`}
           >
             All
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveFilter('blocked')}
+            className={`rounded-full px-3 py-1.5 transition ${
+              activeFilter === 'blocked'
+                ? 'bg-concord-accent text-slate-950'
+                : 'bg-concord-panel-alt text-concord-muted hover:text-concord-text'
+            }`}
+          >
+            Blocked
           </button>
           <button
             type="button"
@@ -261,17 +289,37 @@ export function DmIndexPage() {
           <>
             <div className="mb-4">
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-concord-muted">
-                {activeFilter === 'online' ? `Online - ${onlineFriends.length}` : `All - ${friends.length}`}
+                {activeFilter === 'online'
+                  ? `Online - ${onlineFriends.length}`
+                  : activeFilter === 'blocked'
+                    ? `Blocked - ${blockedUsers.length}`
+                    : `All - ${friends.length}`}
               </p>
             </div>
 
-            {friendsError ? (
+            {activeFilter === 'blocked' && blockedUsersError ? (
+              <p className="rounded-2xl border border-concord-danger/30 bg-concord-danger/10 px-4 py-3 text-sm text-concord-danger">
+                {blockedUsersError}
+              </p>
+            ) : null}
+
+            {activeFilter !== 'blocked' && friendsError ? (
               <p className="rounded-2xl border border-concord-danger/30 bg-concord-danger/10 px-4 py-3 text-sm text-concord-danger">
                 {friendsError}
               </p>
             ) : null}
 
-            {!friendsError && visibleFriends.length === 0 ? (
+            {activeFilter === 'blocked' && isLoadingBlockedUsers ? (
+              <p className="text-sm text-concord-muted">Loading blocked users...</p>
+            ) : null}
+
+            {activeFilter === 'blocked' && !blockedUsersError && visibleBlockedUsers.length === 0 ? (
+              <div className="rounded-2xl border border-concord-border bg-concord-panel-alt/80 px-5 py-6 text-sm leading-6 text-concord-muted">
+                {search.trim() ? 'No blocked users match this search.' : 'Blocked users will appear here.'}
+              </div>
+            ) : null}
+
+            {activeFilter !== 'blocked' && !friendsError && visibleFriends.length === 0 ? (
               <div className="rounded-2xl border border-concord-border bg-concord-panel-alt/80 px-5 py-6 text-sm leading-6 text-concord-muted">
                 {search.trim()
                   ? 'No friends match this search.'
@@ -279,6 +327,72 @@ export function DmIndexPage() {
               </div>
             ) : null}
 
+            {activeFilter === 'blocked' ? (
+              <div className="space-y-2">
+                {visibleBlockedUsers.map((blockedUser) => (
+                  <div
+                    key={blockedUser.blocked_id}
+                    className="flex items-center gap-4 rounded-2xl border border-concord-border bg-concord-panel-alt/70 px-4 py-3"
+                  >
+                    {blockedUser.user?.avatar_url ? (
+                      <img
+                        src={blockedUser.user.avatar_url}
+                        alt={blockedUser.user.username}
+                        className="h-11 w-11 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div
+                        className="flex h-11 w-11 items-center justify-center rounded-full text-sm font-bold text-slate-950"
+                        style={{ backgroundColor: blockedUser.user?.avatar_color || '#5ad1b2' }}
+                      >
+                        {(blockedUser.user?.username ?? '?').slice(0, 1).toUpperCase()}
+                      </div>
+                    )}
+
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-semibold text-concord-text">
+                        {blockedUser.user?.username ?? `User ${blockedUser.blocked_id}`}
+                      </p>
+                      <p className="mt-1 text-sm text-concord-muted">Blocked</p>
+                    </div>
+
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          setOpenMenuUserId((current) =>
+                            current === blockedUser.blocked_id ? null : blockedUser.blocked_id,
+                          )
+                        }}
+                        className="rounded-full px-3 py-2 text-concord-muted transition hover:bg-concord-panel hover:text-concord-text"
+                        aria-label={`Open actions for ${blockedUser.user?.username ?? blockedUser.blocked_id}`}
+                      >
+                        ⋮
+                      </button>
+
+                      {openMenuUserId === blockedUser.blocked_id ? (
+                        <div
+                          className="absolute right-0 top-12 z-20 min-w-44 rounded-2xl border border-concord-border bg-concord-panel p-2 shadow-[0_18px_40px_rgba(0,0,0,0.35)]"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            onClick={(event) => handleUnblockUser(event, blockedUser.blocked_id)}
+                            disabled={Boolean(friendActionByUserId[String(blockedUser.blocked_id)])}
+                            className="flex w-full rounded-xl px-3 py-2 text-left text-sm text-concord-text transition hover:bg-concord-panel-soft disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {friendActionByUserId[String(blockedUser.blocked_id)] === 'unblocking'
+                              ? 'Unblocking...'
+                              : 'Unblock'}
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
             <div className="space-y-2">
               {visibleFriends.map((friend) => (
                 <button
@@ -336,22 +450,23 @@ export function DmIndexPage() {
                             ? 'Removing...'
                             : 'Remove Friend'}
                         </button>
-                        <button
-                          type="button"
-                          onClick={(event) => handleBlockUser(event, friend.user_id)}
-                          disabled={Boolean(friendActionByUserId[String(friend.user_id)])}
-                          className="mt-1 flex w-full rounded-xl px-3 py-2 text-left text-sm text-concord-danger transition hover:bg-concord-danger/10 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          {friendActionByUserId[String(friend.user_id)] === 'blocking'
+                      <button
+                        type="button"
+                        onClick={(event) => handleBlockUser(event, friend.user_id)}
+                        disabled={Boolean(friendActionByUserId[String(friend.user_id)])}
+                        className="mt-1 flex w-full rounded-xl px-3 py-2 text-left text-sm text-concord-danger transition hover:bg-concord-danger/10 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {friendActionByUserId[String(friend.user_id)] === 'blocking'
                             ? 'Blocking...'
                             : 'Block'}
-                        </button>
+                      </button>
                       </div>
                     ) : null}
                   </div>
                 </button>
               ))}
             </div>
+            )}
           </>
         )}
       </div>

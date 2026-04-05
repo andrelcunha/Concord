@@ -71,3 +71,16 @@ export async function blockUserRequest(blockedUserId) {
   })
   return response.data
 }
+
+export async function listBlockedUsersRequest() {
+  const response = await apiClient.get('/api/blocks')
+  return response.data
+}
+
+export async function unblockUserRequest(blockedUserId) {
+  await apiClient.delete('/api/blocks', {
+    data: {
+      blocked_user_id: Number(blockedUserId),
+    },
+  })
+}

@@ -26,6 +26,7 @@ export function AppShell() {
   const fetchDmConversations = useDmStore((state) => state.fetchConversations)
   const fetchFriends = useDmStore((state) => state.fetchFriends)
   const fetchIncomingRequests = useDmStore((state) => state.fetchIncomingRequests)
+  const fetchBlockedUsers = useDmStore((state) => state.fetchBlockedUsers)
   const conversations = useDmStore((state) => state.conversations)
   const conversationsById = useDmStore((state) => state.conversationsById)
   const fetchDmConversation = useDmStore((state) => state.fetchConversation)
@@ -43,7 +44,8 @@ export function AppShell() {
     fetchDmConversations()
     fetchFriends()
     fetchIncomingRequests()
-  }, [fetchDmConversations, fetchFriends, fetchIncomingRequests, fetchServers])
+    fetchBlockedUsers()
+  }, [fetchBlockedUsers, fetchDmConversations, fetchFriends, fetchIncomingRequests, fetchServers])
 
   React.useEffect(() => {
     function refreshDmState() {
@@ -54,6 +56,7 @@ export function AppShell() {
       fetchDmConversations({ silent: true })
       fetchFriends({ silent: true })
       fetchIncomingRequests({ silent: true })
+      fetchBlockedUsers({ silent: true })
     }
 
     const intervalId = window.setInterval(refreshDmState, 10000)
@@ -65,7 +68,7 @@ export function AppShell() {
       document.removeEventListener('visibilitychange', refreshDmState)
       window.removeEventListener('focus', refreshDmState)
     }
-  }, [fetchDmConversations, fetchFriends, fetchIncomingRequests])
+  }, [fetchBlockedUsers, fetchDmConversations, fetchFriends, fetchIncomingRequests])
 
   React.useEffect(() => {
     if (params.serverId) {
