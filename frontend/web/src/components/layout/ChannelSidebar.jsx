@@ -1,6 +1,7 @@
 import React from 'react'
 import { NavLink, useLocation, useNavigate, useParams } from 'react-router-dom'
 
+import { CollapsibleSidebarGroup } from '@/components/layout/CollapsibleSidebarGroup'
 import { useChannelsStore } from '@/features/channels/store'
 import { useServersStore } from '@/features/servers/store'
 import { getChannelRoute } from '@/lib/navigation'
@@ -42,6 +43,9 @@ export function ChannelSidebar() {
   const isCreatingChannel = params.serverId ? creatingByServerId[String(params.serverId)] : false
   const [isDialogOpen, setIsDialogOpen] = React.useState(false)
   const [channelName, setChannelName] = React.useState('')
+  const [isTextChannelsExpanded, setIsTextChannelsExpanded] = React.useState(true)
+
+  const selectedChannel = activeChannels.find((channel) => String(channel.id) === params.channelId)
 
   async function handleCreateChannel(event) {
     event.preventDefault()
@@ -67,20 +71,19 @@ export function ChannelSidebar() {
 
   return (
     <>
-    <aside className="flex w-full shrink-0 flex-col border-b border-concord-border/60 bg-concord-panel-alt/90 md:w-80 md:border-b-0 md:border-r">
+    <aside className="flex w-full shrink-0 flex-col border-b border-concord-border/60 bg-concord-panel-alt/90 md:min-h-0 md:w-80 md:border-b-0 md:border-r">
       <div className="border-b border-concord-border/60 px-5 py-5">
-        <p className="text-xs font-semibold uppercase tracking-[0.32em] text-concord-muted">
+        <h2 className="text-xl font-semibold text-concord-text">
           {activeServerLabel}
-        </p>
-        <h2 className="mt-2 text-xl font-semibold">Channels</h2>
-        <p className="mt-2 text-sm leading-6 text-concord-muted">
-          {isDmRoute
-            ? 'Private conversations will appear here.'
-            : 'Pick a channel to open the conversation.'}
-        </p>
+        </h2>
+        {isDmRoute ? (
+          <p className="mt-2 text-sm leading-6 text-concord-muted">
+            Private conversations will appear here.
+          </p>
+        ) : null}
       </div>
 
-      <div className="flex-1 overflow-auto px-4 py-4">
+      <div className="flex-1 overflow-auto px-4 py-4 md:min-h-0">
         {isDmRoute ? (
           dmGroups.map((group) => (
             <section key={group.label} className="mb-6">
@@ -109,10 +112,24 @@ export function ChannelSidebar() {
             </section>
           ))
         ) : (
-          <section className="mb-6">
-            <h3 className="mb-3 px-2 text-xs font-semibold uppercase tracking-[0.28em] text-concord-muted">
-              Text Channels
-            </h3>
+          <CollapsibleSidebarGroup
+            title="Text Channels"
+            isExpanded={isTextChannelsExpanded}
+            onToggle={() => setIsTextChannelsExpanded((value) => !value)}
+            collapsedContent={
+              selectedChannel ? (
+                <div className="space-y-1">
+                  <NavLink
+                    to={getChannelRoute(params.serverId, selectedChannel.id)}
+                    className="flex items-center rounded-xl bg-concord-panel-soft px-3 py-2 text-sm text-concord-text"
+                  >
+                    <span className="mr-3 text-base text-concord-accent">#</span>
+                    {selectedChannel.name}
+                  </NavLink>
+                </div>
+              ) : null
+            }
+          >
 
             {isLoadingChannels ? (
               <p className="px-2 text-sm text-concord-muted">Loading channels...</p>
@@ -147,7 +164,7 @@ export function ChannelSidebar() {
                 </NavLink>
               ))}
             </div>
-          </section>
+          </CollapsibleSidebarGroup>
         )}
       </div>
 

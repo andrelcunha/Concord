@@ -30,6 +30,28 @@ function isSameAuthorBlock(currentMessage, previousMessage) {
   return currentMessage.username === previousMessage.username
 }
 
+function MessageSkeleton({ grouped = false, widthClass = 'w-64' }) {
+  return (
+    <article className="flex gap-4 rounded-[1.5rem] px-3 py-3">
+      {grouped ? (
+        <div className="h-11 w-11 shrink-0" />
+      ) : (
+        <div className="h-11 w-11 shrink-0 rounded-full bg-concord-panel-soft/80" />
+      )}
+
+      <div className="min-w-0 flex-1">
+        {!grouped ? (
+          <div className="flex items-center gap-3">
+            <div className="h-4 w-28 rounded-full bg-concord-panel-soft/80" />
+            <div className="h-3 w-16 rounded-full bg-concord-panel-soft/60" />
+          </div>
+        ) : null}
+        <div className={`${grouped ? '' : 'mt-3'} h-4 rounded-full bg-concord-panel-soft/75 ${widthClass}`} />
+      </div>
+    </article>
+  )
+}
+
 export function ChannelPage() {
   const { serverId, channelId } = useParams()
   const servers = useServersStore((state) => state.servers)
@@ -201,48 +223,40 @@ export function ChannelPage() {
   }
 
   return (
-    <section className="mx-auto flex max-w-5xl flex-col gap-5">
-      <div className="rounded-[2rem] border border-concord-border bg-concord-panel/70 p-6 shadow-[0_25px_80px_rgba(0,0,0,0.25)]">
-        <h2 className="mt-3 text-3xl font-semibold text-concord-text">
-          {server?.name ?? `Server ${serverId}`} · #{channel.name}
-        </h2>
-      </div>
-
-      <div className="overflow-hidden rounded-[2rem] border border-concord-border bg-concord-panel/70 shadow-[0_25px_80px_rgba(0,0,0,0.25)]">
-        <div className="flex flex-col gap-2 border-b border-concord-border/60 px-6 py-4 md:flex-row md:items-center md:justify-between">
-          <p className="text-sm text-concord-muted">
-            Channel #{channel.name} · {messages.length} loaded message{messages.length === 1 ? '' : 's'}
-          </p>
-          <div className="flex items-center gap-3">
+    <section className="flex h-full min-h-0 flex-col">
+      <div className="flex min-h-0 flex-1 flex-col">
+        {connectionState === 'connecting' || connectionState === 'disconnected' ? (
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-concord-border bg-concord-panel-alt/70 px-4 py-3">
             <p
-              className={`text-xs font-semibold uppercase tracking-[0.24em] ${
-                connectionState === 'connected'
-                  ? 'text-concord-accent'
-                  : connectionState === 'connecting'
-                    ? 'text-amber-300'
-                    : 'text-concord-danger'
+              className={`text-sm ${
+                connectionState === 'connecting' ? 'text-amber-300' : 'text-concord-danger'
               }`}
             >
-              Live state: {connectionState}
+              {connectionState === 'connecting'
+                ? 'Connecting to live updates...'
+                : 'Live updates are disconnected.'}
             </p>
-            {connectionState !== 'connected' ? (
-              <button
-                type="button"
-                onClick={handleReconnect}
-                className="rounded-full border border-concord-border bg-concord-panel-alt px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-concord-text transition hover:border-concord-accent"
-              >
-                Reconnect
-              </button>
-            ) : null}
+            <button
+              type="button"
+              onClick={handleReconnect}
+              className="rounded-full border border-concord-border bg-concord-panel px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-concord-text transition hover:border-concord-accent"
+            >
+              Reconnect
+            </button>
           </div>
-        </div>
+        ) : null}
 
         <div
           ref={messagesContainerRef}
-          className="flex max-h-[34rem] flex-col gap-4 overflow-y-auto px-4 py-4 md:px-6 md:py-6"
+          className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-1 py-2 md:px-2 md:py-3"
         >
           {isLoadingMessages ? (
-            <p className="text-sm text-concord-muted">Loading message history...</p>
+            <div className="flex flex-col gap-2">
+              <MessageSkeleton widthClass="w-72 max-w-[70%]" />
+              <MessageSkeleton grouped widthClass="w-56 max-w-[55%]" />
+              <MessageSkeleton widthClass="w-80 max-w-[75%]" />
+              <MessageSkeleton grouped widthClass="w-64 max-w-[60%]" />
+            </div>
           ) : null}
 
           {messageError ? (
@@ -318,11 +332,8 @@ export function ChannelPage() {
             })}
         </div>
 
-        <div className="border-t border-concord-border/60 px-4 py-4 md:px-6">
+        <div className="mt-4 border-t border-concord-border/60 px-1 py-4 md:px-2">
           <form className="flex flex-col gap-3" onSubmit={handleSendMessage}>
-            <label className="text-xs font-semibold uppercase tracking-[0.24em] text-concord-muted">
-              Send a message
-            </label>
             <div className="flex flex-col gap-3 md:flex-row">
               <input
                 value={draftMessage}
@@ -339,12 +350,7 @@ export function ChannelPage() {
             </div>
             {sendError ? (
               <p className="text-sm text-concord-danger">{sendError}</p>
-            ) : (
-              <p className="text-sm text-concord-muted">
-                This slice adds optimistic sending, automatic reconnect attempts, and a manual
-                reconnect escape hatch.
-              </p>
-            )}
+            ) : null}
           </form>
         </div>
       </div>
