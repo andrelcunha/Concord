@@ -4,6 +4,7 @@ import { Outlet, useLocation, useParams } from 'react-router-dom'
 import { ChannelSidebar } from '@/components/layout/ChannelSidebar'
 import { useChannelsStore } from '@/features/channels/store'
 import { useChatStore } from '@/features/chat/store'
+import { useDmStore } from '@/features/dm/store'
 import { ServerRail } from '@/components/layout/ServerRail'
 import { UserPanel } from '@/components/layout/UserPanel'
 import { useServersStore } from '@/features/servers/store'
@@ -22,10 +23,16 @@ export function AppShell() {
   const clearChannels = useChannelsStore((state) => state.clearChannels)
   const fetchMessagesForChannel = useChatStore((state) => state.fetchMessagesForChannel)
   const clearMessages = useChatStore((state) => state.clearMessages)
+  const fetchDmConversations = useDmStore((state) => state.fetchConversations)
+  const conversations = useDmStore((state) => state.conversations)
+  const conversationsById = useDmStore((state) => state.conversationsById)
+  const fetchDmConversation = useDmStore((state) => state.fetchConversation)
+  const clearDms = useDmStore((state) => state.clearDms)
 
   React.useEffect(() => {
     fetchServers()
-  }, [fetchServers])
+    fetchDmConversations()
+  }, [fetchDmConversations, fetchServers])
 
   React.useEffect(() => {
     if (params.serverId) {
@@ -39,12 +46,19 @@ export function AppShell() {
     }
   }, [fetchMessagesForChannel, params.channelId])
 
+  React.useEffect(() => {
+    if (params.conversationId) {
+      fetchDmConversation(params.conversationId)
+    }
+  }, [fetchDmConversation, params.conversationId])
+
   const handleLogout = React.useCallback(() => {
     clearMessages()
+    clearDms()
     clearChannels()
     clearServers()
     logout()
-  }, [clearChannels, clearMessages, clearServers, logout])
+  }, [clearChannels, clearDms, clearMessages, clearServers, logout])
 
   const isDm = location.pathname.startsWith('/app/dm')
   const isSettings = location.pathname === '/app/settings'
@@ -52,9 +66,12 @@ export function AppShell() {
   const activeChannels = params.serverId ? channelsByServerId[String(params.serverId)] ?? [] : []
   const isLoadingServerChannels = params.serverId ? loadingByServerId[String(params.serverId)] : false
   const activeChannel = activeChannels.find((channel) => String(channel.id) === params.channelId)
+  const activeConversation =
+    conversations.find((conversation) => String(conversation.id) === params.conversationId) ??
+    conversationsById[String(params.conversationId)]
   const title = isDm
     ? params.conversationId
-      ? `DM · ${params.conversationId}`
+      ? activeConversation?.other_user?.username ?? 'Direct message'
       : 'Direct messages'
     : isSettings
       ? 'Settings'
@@ -64,7 +81,9 @@ export function AppShell() {
         ? activeServer?.name ?? (isLoadingServerChannels ? null : 'Server')
         : 'Welcome to Concord'
   const subtitle = isDm
-    ? 'Select a conversation from the sidebar.'
+    ? params.conversationId
+      ? null
+      : 'Pick a friend to continue an existing conversation or start a new one.'
     : isSettings
       ? 'Review your account session and the profile tools we can grow next.'
     : params.channelId

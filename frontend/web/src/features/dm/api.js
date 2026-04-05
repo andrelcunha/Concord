@@ -1,0 +1,32 @@
+import { apiClient } from '@/lib/apiClient'
+
+export async function listDmConversationsRequest() {
+  const response = await apiClient.get('/api/dms')
+  return response.data
+}
+
+export async function getDmConversationRequest(conversationId) {
+  const response = await apiClient.get(`/api/dms/${conversationId}`)
+  return response.data
+}
+
+export async function createOrGetDmConversationRequest(otherUserId) {
+  const response = await apiClient.post('/api/dms', {
+    other_user_id: Number(otherUserId),
+  })
+  return response.data
+}
+
+export async function hideDmConversationRequest(conversationId) {
+  await apiClient.delete(`/api/dms/${conversationId}`)
+}
+
+export async function listDmMessagesRequest(conversationId) {
+  const response = await apiClient.get(`/api/dms/${conversationId}/messages`)
+  return response.data
+}
+
+export async function listFriendsRequest() {
+  const response = await apiClient.get('/api/friends')
+  return response.data
+}
