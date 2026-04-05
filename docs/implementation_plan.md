@@ -280,6 +280,12 @@ Suggested slices:
 3. define profile fields to support first
 4. wire editable settings once backend support exists
 
+Current status:
+
+- the settings route now shows a real account overview
+- session details are visible in a read-only form
+- editable profile fields still depend on backend support
+
 Possible initial fields:
 
 - full name

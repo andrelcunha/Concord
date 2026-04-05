@@ -28,6 +28,10 @@ type ListUserServersResponse struct {
 	Servers []CreateServerResponse `json:"servers"`
 }
 
+type DiscoverServersResponse struct {
+	Servers []CreateServerResponse `json:"servers"`
+}
+
 func NewHandler(service *Service) *Handler {
 	return &Handler{Service: service}
 }
@@ -109,9 +113,33 @@ func (h *Handler) JoinServer(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusOK)
 }
 
+func (h *Handler) DiscoverServers(c *fiber.Ctx) error {
+	userID := c.Locals("userID").(int32)
+	query := c.Query("query")
+
+	serverDtos, err := h.Service.ListDiscoverableServers(c.Context(), userID, query)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	servers := make([]CreateServerResponse, len(serverDtos))
+	for i, serverDto := range serverDtos {
+		servers[i] = CreateServerResponse{
+			ID:        serverDto.ID,
+			Name:      serverDto.Name,
+			CreatorID: serverDto.CreatorID,
+			IsPublic:  serverDto.IsPublic,
+			CreatedAt: serverDto.CreatedAt,
+		}
+	}
+
+	return c.JSON(DiscoverServersResponse{Servers: servers})
+}
+
 func RegisterServersRoutes(api fiber.Router, service *Service) {
 	handler := NewHandler(service)
 	api.Post("/servers", handler.CreateServer)
 	api.Get("/servers", handler.ListUserServers)
+	api.Get("/servers/discover", handler.DiscoverServers)
 	api.Post("/servers/:id/join", handler.JoinServer)
 }

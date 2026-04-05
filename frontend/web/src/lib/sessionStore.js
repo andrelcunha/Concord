@@ -12,6 +12,7 @@ function parseJwtPayload(token) {
     const user = decodedPayload.user ? JSON.parse(decodedPayload.user) : null
 
     return {
+      userId: decodedPayload.sub ?? null,
       username: decodedPayload.username ?? '',
       user,
     }
@@ -32,6 +33,11 @@ export const useSessionStore = create(
       setSession: ({ accessToken, refreshToken, expiresIn }) =>
         set(() => {
           const parsedJwt = parseJwtPayload(accessToken)
+          const rawUser = parsedJwt.user ?? {}
+          const username = rawUser.username ?? parsedJwt.username ?? ''
+          const avatarUrl = rawUser.avatar_url ?? rawUser.avatarUrl ?? ''
+          const avatarColor = rawUser.avatar_color ?? rawUser.avatarColor ?? '#5ad1b2'
+          const userId = rawUser.user_id ?? rawUser.userId ?? parsedJwt.userId ?? null
 
           return {
             accessToken,
@@ -39,11 +45,12 @@ export const useSessionStore = create(
             expiresAt: expiresIn ? Date.now() + expiresIn * 1000 : null,
             isAuthenticated: true,
             registerSuccessMessage: '',
-            currentUser: parsedJwt.user
+            currentUser: username
               ? {
-                  username: parsedJwt.username,
-                  avatarUrl: parsedJwt.user.avatarUrl ?? '',
-                  avatarColor: parsedJwt.user.avatarColor ?? '#5ad1b2',
+                  userId,
+                  username,
+                  avatarUrl,
+                  avatarColor,
                 }
               : null,
           }

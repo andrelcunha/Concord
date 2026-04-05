@@ -11,6 +11,7 @@ import { useSessionStore } from '@/lib/sessionStore'
 export function AppShell() {
   const location = useLocation()
   const params = useParams()
+  const currentUser = useSessionStore((state) => state.currentUser)
   const logout = useSessionStore((state) => state.logout)
   const fetchServers = useServersStore((state) => state.fetchServers)
   const clearServers = useServersStore((state) => state.clearServers)
@@ -43,10 +44,13 @@ export function AppShell() {
   }, [clearChannels, clearMessages, clearServers, logout])
 
   const isDm = location.pathname.startsWith('/app/dm')
+  const isSettings = location.pathname === '/app/settings'
   const title = isDm
     ? params.conversationId
       ? `DM · ${params.conversationId}`
       : 'Direct messages'
+    : isSettings
+      ? 'Settings'
     : params.channelId
       ? `# ${params.channelId}`
       : params.serverId
@@ -54,6 +58,8 @@ export function AppShell() {
         : 'Welcome to Concord'
   const subtitle = isDm
     ? 'Select a conversation from the sidebar.'
+    : isSettings
+      ? 'Review your account session and the profile tools we can grow next.'
     : params.serverId
       ? 'Use the sidebar to enter a channel.'
       : 'Pick a server or direct messages to get started.'
@@ -73,6 +79,11 @@ export function AppShell() {
               <p className="mt-1 text-sm text-concord-muted">{subtitle}</p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
+              {currentUser?.username ? (
+                <div className="rounded-full border border-concord-border bg-concord-panel-alt px-4 py-2 text-sm text-concord-muted">
+                  Signed in as <span className="font-semibold text-concord-text">{currentUser.username}</span>
+                </div>
+              ) : null}
               <NavLink
                 to="/app/settings"
                 className="rounded-full border border-concord-border bg-concord-panel-alt px-4 py-2 text-sm text-concord-muted transition hover:border-concord-accent hover:text-concord-text"
