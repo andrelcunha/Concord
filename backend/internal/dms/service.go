@@ -3,10 +3,13 @@ package dms
 import (
 	"context"
 	"errors"
+	"fmt"
+	"log"
 
 	"github.com/andrelcunha/Concord/backend/internal/blocks"
 	"github.com/andrelcunha/Concord/backend/internal/friendships"
 	"github.com/andrelcunha/Concord/backend/pkg/dtos"
+	"github.com/redis/go-redis/v9"
 )
 
 var (
@@ -19,10 +22,11 @@ type Service struct {
 	repo           Repository
 	friendshipRepo friendships.Repository
 	blockRepo      blocks.Repository
+	redis          *redis.Client
 }
 
-func NewService(repo Repository, friendshipRepo friendships.Repository, blockRepo blocks.Repository) *Service {
-	return &Service{repo: repo, friendshipRepo: friendshipRepo, blockRepo: blockRepo}
+func NewService(repo Repository, friendshipRepo friendships.Repository, blockRepo blocks.Repository, redis *redis.Client) *Service {
+	return &Service{repo: repo, friendshipRepo: friendshipRepo, blockRepo: blockRepo, redis: redis}
 }
 
 func normalizePair(a, b int32) (int32, int32) {
@@ -138,4 +142,39 @@ func (s *Service) ListMessages(ctx context.Context, userID, conversationID, limi
 		})
 	}
 	return messages, nil
+}
+
+func (s *Service) StoreMessage(ctx context.Context, userID, conversationID int32, content string) (dtos.DmMessageDto, error) {
+	if _, err := s.repo.GetDmConversationParticipant(ctx, conversationID, userID); err != nil {
+		return dtos.DmMessageDto{}, ErrDmForbidden
+	}
+
+	message, err := s.repo.CreateDmMessage(ctx, conversationID, userID, content)
+	if err != nil {
+		log.Printf("CreateDmMessage error: %v", err)
+		return dtos.DmMessageDto{}, err
+	}
+
+	conversation, err := s.repo.GetDmConversationForUser(ctx, conversationID, userID)
+	if err != nil {
+		return dtos.DmMessageDto{}, ErrDmForbidden
+	}
+
+	return dtos.DmMessageDto{
+		ID:             message.ID,
+		ConversationID: message.ConversationID,
+		UserID:         message.UserID,
+		Username:       conversation.OtherUsername,
+		Content:        message.Content,
+		CreatedAt:      message.CreatedAt.Time,
+	}, nil
+}
+
+func (s *Service) BroadcastMessage(ctx context.Context, conversationID int32, messageJSON []byte) error {
+	key := fmt.Sprintf("dm:%d", conversationID)
+	if err := s.redis.Publish(ctx, key, messageJSON).Err(); err != nil {
+		log.Printf("Publish DM error: %v", err)
+		return err
+	}
+	return nil
 }

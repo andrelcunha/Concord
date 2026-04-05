@@ -17,6 +17,7 @@ type Repository interface {
 	HideDmConversationForUser(ctx context.Context, conversationID, userID int32) error
 	UnhideDmConversationForUser(ctx context.Context, conversationID, userID int32) error
 	ListDmMessagesByConversation(ctx context.Context, conversationID, limit, offset int32) ([]db.ListDmMessagesByConversationRow, error)
+	CreateDmMessage(ctx context.Context, conversationID, userID int32, content string) (db.DmMessage, error)
 }
 
 type repository struct {
@@ -113,5 +114,13 @@ func (r *repository) ListDmMessagesByConversation(ctx context.Context, conversat
 		ConversationID: conversationID,
 		Limit:          limit,
 		Offset:         offset,
+	})
+}
+
+func (r *repository) CreateDmMessage(ctx context.Context, conversationID, userID int32, content string) (db.DmMessage, error) {
+	return r.db.CreateDmMessage(ctx, db.CreateDmMessageParams{
+		ConversationID: conversationID,
+		UserID:         userID,
+		Content:        content,
 	})
 }

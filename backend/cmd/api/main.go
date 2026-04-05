@@ -64,8 +64,9 @@ func main() {
 
 	// Initialize direct messages service
 	dmRepo := dms.NewRepository(dbPool)
-	dmService := dms.NewService(dmRepo, friendshipsRepo, blocksRepo)
+	dmService := dms.NewService(dmRepo, friendshipsRepo, blocksRepo, redisClient)
 	dms.RegisterDmRoutes(api, dmService)
+	dms.RegisterDmWebSocketRoutes(api, dmService)
 
 	// Initialize websocket service
 	msgRepo := messages.NewRepository(dbPool)
