@@ -9,9 +9,9 @@ Concord is a learning-oriented Discord-like chat app. Prefer pragmatic, incremen
 ## Repository Map
 
 - `backend/`: Go API and realtime backend
-- `frontend/web/`: Vue frontend
+- `frontend/web/`: Vue frontend  
 - `postgres/`, `redis/`: local infrastructure configs
-- `backend/internal/db/`: `sqlc`-generated DB layer and migrations
+- `backend/internal/db/`: `sqlc`-generated DB layer and migrations (use `golang-migrate` to apply)
 
 ## What Is Canonical
 
@@ -93,8 +93,8 @@ When touching realtime behavior:
 
 ## Common Pitfalls
 
-- The backend compose setup and checked-in env values are not fully aligned on the database name
-- There is untracked or in-progress UI work in this repo at times; do not delete it just because it is not wired yet
+- The backend compose setup creates a default database `postgres`, but you need to manually create the `concord` database for the application
+- There is untracked or in-progress UI work in this repo at times; do not delete it just because it is not wired yet  
 - Some generated code may look hand-written at a glance; verify before editing
 
 ## Good Contributions

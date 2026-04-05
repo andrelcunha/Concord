@@ -96,7 +96,24 @@ PORT=3000
 
 SQL migrations live in `backend/internal/db/migrations/`.
 
-This repository does not currently ship a dedicated migration CLI wrapper, so apply them with your preferred Postgres migration tool or manually in order if you are bootstrapping locally.
+The project uses [golang-migrate](https://github.com/golang-migrate/migrate) for database migrations. Install it first:
+
+```bash
+go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+```
+
+Then apply the migrations:
+
+```bash
+cd backend
+migrate -path internal/db/migrations -database "postgresql://postgres:root@localhost:5432/concord?sslmode=disable" up
+```
+
+Note: Make sure to create the `concord` database first if it doesn't exist:
+
+```bash
+PGPASSWORD=root psql -h localhost -U postgres -d postgres -c "CREATE DATABASE concord;"
+```
 
 The backend config loader is fail-soft:
 
@@ -171,9 +188,27 @@ npm run test:e2e
 
 If you change queries or schemas, regenerate the `sqlc` output before opening a PR.
 
+### Migration Commands
+
+Common migration operations:
+
+```bash
+# Apply all pending migrations
+migrate -path internal/db/migrations -database "postgresql://postgres:root@localhost:5432/concord?sslmode=disable" up
+
+# Rollback the last migration
+migrate -path internal/db/migrations -database "postgresql://postgres:root@localhost:5432/concord?sslmode=disable" down 1
+
+# Check current migration version
+migrate -path internal/db/migrations -database "postgresql://postgres:root@localhost:5432/concord?sslmode=disable" version
+
+# Create a new migration
+migrate create -ext sql -dir internal/db/migrations -seq your_migration_name
+```
+
 ## Known Caveats
 
-- `postgres/docker-compose.yaml` creates the default database `postgres`, while the checked-in backend env points at `concord`
+- `postgres/docker-compose.yaml` creates the default database `postgres`, while the backend configuration expects `concord` (you'll need to create this database manually)
 - `frontend/web/src/views/ChannelsView.vue` currently calls `/api/channels` without `server_id`, but the backend requires `server_id`
 - `frontend/web/src/views/ServerListView.vue` appears to be a newer server-aware sidebar, but it is not wired into the main layout yet
 
@@ -183,4 +218,10 @@ These are useful areas to improve if you want to continue productizing the app.
 
 - [AGENTS.md](/home/andre/src/tests_and_examples/golang/Concord/AGENTS.md)
 - [CONTRIBUTING.md](/home/andre/src/tests_and_examples/golang/Concord/CONTRIBUTING.md)
+- [docs/bot_support_plan.md](/home/andre/src/tests_and_examples/golang/Concord/docs/bot_support_plan.md)
 - [docs/ARCHITECTURE.md](/home/andre/src/tests_and_examples/golang/Concord/docs/ARCHITECTURE.md)
+- [docs/product_vision.md](/home/andre/src/tests_and_examples/golang/Concord/docs/product_vision.md)
+- [docs/roadmap.md](/home/andre/src/tests_and_examples/golang/Concord/docs/roadmap.md)
+- [docs/frontend_architecture.md](/home/andre/src/tests_and_examples/golang/Concord/docs/frontend_architecture.md)
+- [docs/frontend_design_direction.md](/home/andre/src/tests_and_examples/golang/Concord/docs/frontend_design_direction.md)
+- [docs/implementation_plan.md](/home/andre/src/tests_and_examples/golang/Concord/docs/implementation_plan.md)

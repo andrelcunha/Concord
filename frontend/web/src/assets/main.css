@@ -1,12 +1,52 @@
 @import "tailwindcss";
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
 @theme {
-  --color-discord-bg: #36393f;            /* Main background */
-  --color-discord-card: #2f3136;          /* Card/form background */
-  --color-discord-input: #202225;         /* Input fields */
-  --color-discord-blurple: #5865f2;       /* Primary buttons and accents */
-  --color-discord-blurple-hover: #4752c4; /* Hover state for Blurple */
+  --color-concord-night: #181c23;
+  --color-concord-panel: #20262f;
+  --color-concord-panel-alt: #262d39;
+  --color-concord-panel-soft: #2c3442;
+  --color-concord-border: #394355;
+  --color-concord-text: #edf2f7;
+  --color-concord-muted: #97a3b6;
+  --color-concord-accent: #5ad1b2;
+  --color-concord-accent-strong: #3db798;
+  --color-concord-danger: #ef6b73;
+}
+
+:root {
+  color: var(--color-concord-text);
+  background: var(--color-concord-night);
+  font-family:
+    "Space Grotesk",
+    "Segoe UI",
+    sans-serif;
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
+  width: 100%;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at top, rgba(90, 209, 178, 0.12), transparent 32%),
+    linear-gradient(180deg, #181c23 0%, #12161c 100%);
+  color: var(--color-concord-text);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+* {
+  box-sizing: border-box;
 }

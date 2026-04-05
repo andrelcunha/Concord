@@ -16,27 +16,27 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.6",
-    "pinia": "^3.0.1",
+    "axios": "^1.8.4",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-router-dom": "^7.5.1",
     "tailwindcss": "^4.1.6",
-    "vue": "^3.5.13",
-    "vue-router": "^4.5.0"
+    "zustand": "^5.0.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.22.0",
-    "@vitejs/plugin-vue": "^5.2.3",
+    "@vitejs/plugin-react": "^4.4.1",
     "@vitest/eslint-plugin": "^1.1.39",
-    "@vue/eslint-config-prettier": "^10.2.0",
-    "@vue/test-utils": "^2.4.6",
     "cypress": "^14.2.1",
     "eslint": "^9.22.0",
     "eslint-plugin-cypress": "^4.2.0",
-    "eslint-plugin-vue": "~10.0.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
     "jsdom": "^26.0.0",
     "prettier": "3.5.3",
     "start-server-and-test": "^2.0.11",
     "vite": "^6.2.4",
-    "vite-plugin-vue-devtools": "^7.7.2",
     "vitest": "^3.1.1"
   }
 }
