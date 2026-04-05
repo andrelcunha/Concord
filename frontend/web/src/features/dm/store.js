@@ -20,12 +20,15 @@ export const useDmStore = create((set, get) => ({
   conversations: [],
   conversationsById: {},
   isLoadingConversations: false,
+  hasLoadedConversations: false,
   conversationsError: '',
   friends: [],
   isLoadingFriends: false,
+  hasLoadedFriends: false,
   friendsError: '',
   incomingRequests: [],
   isLoadingIncomingRequests: false,
+  hasLoadedIncomingRequests: false,
   incomingRequestsError: '',
   requestActionById: {},
   searchedUsers: [],
@@ -40,15 +43,17 @@ export const useDmStore = create((set, get) => ({
   errorByConversationId: {},
   connectionStateByConversationId: {},
 
-  fetchConversations: async () => {
+  fetchConversations: async ({ silent = false } = {}) => {
     if (get().isLoadingConversations) {
       return
     }
 
-    set({
-      isLoadingConversations: true,
-      conversationsError: '',
-    })
+    if (!silent) {
+      set({
+        isLoadingConversations: true,
+        conversationsError: '',
+      })
+    }
 
     try {
       const data = await listDmConversationsRequest()
@@ -61,10 +66,13 @@ export const useDmStore = create((set, get) => ({
           return accumulator
         }, {}),
         isLoadingConversations: false,
+        hasLoadedConversations: true,
+        ...(silent ? {} : { conversationsError: '' }),
       })
     } catch (error) {
       set({
         isLoadingConversations: false,
+        hasLoadedConversations: true,
         conversationsError: error.response?.data?.error ?? 'Failed to load direct messages',
       })
     }
@@ -98,49 +106,59 @@ export const useDmStore = create((set, get) => ({
     }
   },
 
-  fetchFriends: async () => {
+  fetchFriends: async ({ silent = false } = {}) => {
     if (get().isLoadingFriends) {
       return
     }
 
-    set({
-      isLoadingFriends: true,
-      friendsError: '',
-    })
+    if (!silent) {
+      set({
+        isLoadingFriends: true,
+        friendsError: '',
+      })
+    }
 
     try {
       const data = await listFriendsRequest()
       set({
         friends: data.friends ?? [],
         isLoadingFriends: false,
+        hasLoadedFriends: true,
+        ...(silent ? {} : { friendsError: '' }),
       })
     } catch (error) {
       set({
         isLoadingFriends: false,
+        hasLoadedFriends: true,
         friendsError: error.response?.data?.error ?? 'Failed to load friends',
       })
     }
   },
 
-  fetchIncomingRequests: async () => {
+  fetchIncomingRequests: async ({ silent = false } = {}) => {
     if (get().isLoadingIncomingRequests) {
       return
     }
 
-    set({
-      isLoadingIncomingRequests: true,
-      incomingRequestsError: '',
-    })
+    if (!silent) {
+      set({
+        isLoadingIncomingRequests: true,
+        incomingRequestsError: '',
+      })
+    }
 
     try {
       const data = await listIncomingFriendRequestsRequest()
       set({
         incomingRequests: data.requests ?? [],
         isLoadingIncomingRequests: false,
+        hasLoadedIncomingRequests: true,
+        ...(silent ? {} : { incomingRequestsError: '' }),
       })
     } catch (error) {
       set({
         isLoadingIncomingRequests: false,
+        hasLoadedIncomingRequests: true,
         incomingRequestsError: error.response?.data?.error ?? 'Failed to load incoming requests',
       })
     }
@@ -612,12 +630,15 @@ export const useDmStore = create((set, get) => ({
       conversations: [],
       conversationsById: {},
       isLoadingConversations: false,
+      hasLoadedConversations: false,
       conversationsError: '',
       friends: [],
       isLoadingFriends: false,
+      hasLoadedFriends: false,
       friendsError: '',
       incomingRequests: [],
       isLoadingIncomingRequests: false,
+      hasLoadedIncomingRequests: false,
       incomingRequestsError: '',
       requestActionById: {},
       searchedUsers: [],

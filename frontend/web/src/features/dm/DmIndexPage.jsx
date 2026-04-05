@@ -59,7 +59,7 @@ export function DmIndexPage() {
 
   React.useEffect(() => {
     function refreshFriends() {
-      fetchFriends()
+      fetchFriends({ silent: true })
     }
 
     window.addEventListener('focus', refreshFriends)

@@ -51,9 +51,9 @@ export function AppShell() {
         return
       }
 
-      fetchDmConversations()
-      fetchFriends()
-      fetchIncomingRequests()
+      fetchDmConversations({ silent: true })
+      fetchFriends({ silent: true })
+      fetchIncomingRequests({ silent: true })
     }
 
     const intervalId = window.setInterval(refreshDmState, 10000)
