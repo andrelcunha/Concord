@@ -24,6 +24,9 @@ func (h *Handler) BlockUser(c *fiber.Ctx) error {
 		if err == ErrCannotBlockYourself {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 		}
+		if err == ErrAlreadyBlocked {
+			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": err.Error()})
+		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 	return c.JSON(block)

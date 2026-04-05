@@ -7,7 +7,10 @@ import (
 	"github.com/andrelcunha/Concord/backend/pkg/dtos"
 )
 
-var ErrCannotBlockYourself = errors.New("cannot block yourself")
+var (
+	ErrCannotBlockYourself = errors.New("cannot block yourself")
+	ErrAlreadyBlocked      = errors.New("user is already blocked")
+)
 
 type Service struct {
 	repo Repository
@@ -20,6 +23,9 @@ func NewService(repo Repository) *Service {
 func (s *Service) BlockUser(ctx context.Context, blockerID, blockedID int32) (dtos.BlockDto, error) {
 	if blockerID == blockedID {
 		return dtos.BlockDto{}, ErrCannotBlockYourself
+	}
+	if _, err := s.repo.GetBlock(ctx, blockerID, blockedID); err == nil {
+		return dtos.BlockDto{}, ErrAlreadyBlocked
 	}
 
 	block, err := s.repo.CreateBlock(ctx, blockerID, blockedID)
