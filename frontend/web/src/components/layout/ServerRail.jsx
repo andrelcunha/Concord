@@ -41,6 +41,21 @@ export function ServerRail() {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false)
   const [serverName, setServerName] = React.useState('')
   const [isPublic, setIsPublic] = React.useState(true)
+  const [tooltip, setTooltip] = React.useState(null)
+
+  const showTooltip = React.useCallback((event, label) => {
+    const rect = event.currentTarget.getBoundingClientRect()
+
+    setTooltip({
+      label,
+      top: rect.top + rect.height / 2,
+      left: rect.right + 12,
+    })
+  }, [])
+
+  const hideTooltip = React.useCallback(() => {
+    setTooltip(null)
+  }, [])
 
   async function handleCreateServer(event) {
     event.preventDefault()
@@ -79,7 +94,10 @@ export function ServerRail() {
           ].join(' ')
         }
         aria-label="Direct messages"
-        title="Direct messages"
+        onMouseEnter={(event) => showTooltip(event, 'Direct messages')}
+        onMouseLeave={hideTooltip}
+        onFocus={(event) => showTooltip(event, 'Direct messages')}
+        onBlur={hideTooltip}
       >
         {() => <ConcordLogo className="h-[3.4rem] w-[3.4rem]" />}
       </NavLink>
@@ -99,7 +117,10 @@ export function ServerRail() {
               to={getServerRoute(server.id)}
               className={railLinkClass}
               aria-label={server.name}
-              title={server.name}
+              onMouseEnter={(event) => showTooltip(event, server.name)}
+              onMouseLeave={hideTooltip}
+              onFocus={(event) => showTooltip(event, server.name)}
+              onBlur={hideTooltip}
             >
               {getServerBadge(server.name)}
             </NavLink>
@@ -185,6 +206,19 @@ export function ServerRail() {
               </button>
             </div>
           </form>
+        </div>
+      </div>
+    ) : null}
+    {tooltip ? (
+      <div
+        className="pointer-events-none fixed z-50 hidden -translate-y-1/2 md:block"
+        style={{
+          top: tooltip.top,
+          left: tooltip.left,
+        }}
+      >
+        <div className="whitespace-nowrap rounded-md bg-concord-text px-2.5 py-1.5 text-xs font-semibold text-slate-950 shadow-[0_12px_28px_rgba(0,0,0,0.28)]">
+          {tooltip.label}
         </div>
       </div>
     ) : null}
