@@ -72,6 +72,7 @@ export function DmConversationPage() {
   const messages = messagesByConversationId[String(conversationId)] ?? []
   const isLoadingMessages = loadingByConversationId[String(conversationId)]
   const messageError = errorByConversationId[String(conversationId)]
+  const isBlocked = messageError === 'direct message is blocked'
   const connectionState = connectionStateByConversationId[String(conversationId)] ?? 'idle'
   const [draftMessage, setDraftMessage] = React.useState('')
   const [sendError, setSendError] = React.useState('')
@@ -102,7 +103,7 @@ export function DmConversationPage() {
   }, [messages.length, conversationId])
 
   React.useEffect(() => {
-    if (!conversationId || !accessToken || !hasConversation) {
+    if (!conversationId || !accessToken || !hasConversation || isBlocked) {
       return undefined
     }
 
@@ -156,6 +157,7 @@ export function DmConversationPage() {
     conversationId,
     currentUser?.username,
     hasConversation,
+    isBlocked,
     reconnectNonce,
     reconcileIncomingMessage,
     setConnectionState,
@@ -167,6 +169,11 @@ export function DmConversationPage() {
 
     const content = draftMessage.trim()
     if (!content) {
+      return
+    }
+
+    if (isBlocked) {
+      setSendError('This direct message is blocked.')
       return
     }
 
@@ -226,7 +233,7 @@ export function DmConversationPage() {
   return (
     <section className="flex h-full min-h-0 flex-col">
       <div className="flex min-h-0 flex-1 flex-col">
-        {connectionState === 'connecting' || connectionState === 'disconnected' ? (
+        {!isBlocked && (connectionState === 'connecting' || connectionState === 'disconnected') ? (
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-concord-border bg-concord-panel-alt/70 px-4 py-3">
             <p
               className={`text-sm ${
@@ -260,13 +267,19 @@ export function DmConversationPage() {
             </div>
           ) : null}
 
-          {messageError ? (
+          {isBlocked ? (
+            <div className="rounded-[1.5rem] border border-concord-danger/30 bg-concord-danger/8 px-5 py-6 text-sm leading-6 text-concord-danger">
+              This conversation is blocked. Messaging is unavailable while the block is in place.
+            </div>
+          ) : null}
+
+          {messageError && !isBlocked ? (
             <p className="rounded-2xl border border-concord-danger/30 bg-concord-danger/10 px-4 py-3 text-sm text-concord-danger">
               {messageError}
             </p>
           ) : null}
 
-          {!isLoadingMessages && !messageError && messages.length === 0 ? (
+          {!isLoadingMessages && !messageError && !isBlocked && messages.length === 0 ? (
             <div className="rounded-[1.5rem] border border-concord-border bg-concord-panel-alt/80 px-5 py-6 text-sm leading-6 text-concord-muted">
               No messages yet. Start the conversation with {conversation.other_user.username}.
             </div>
@@ -274,6 +287,7 @@ export function DmConversationPage() {
 
           {!isLoadingMessages &&
             !messageError &&
+            !isBlocked &&
             messages.map((message, index) => {
               const grouped = isSameAuthorBlock(message, messages[index - 1])
 
@@ -338,11 +352,17 @@ export function DmConversationPage() {
               <input
                 value={draftMessage}
                 onChange={(event) => setDraftMessage(event.target.value)}
-                placeholder={`Message ${conversation.other_user.username}`}
+                placeholder={
+                  isBlocked
+                    ? 'Messaging unavailable'
+                    : `Message ${conversation.other_user.username}`
+                }
+                disabled={isBlocked}
                 className="min-w-0 flex-1 rounded-2xl border border-concord-border bg-concord-panel-alt px-4 py-3 text-sm text-concord-text outline-none transition focus:border-concord-accent"
               />
               <button
                 type="submit"
+                disabled={isBlocked}
                 className="rounded-2xl bg-concord-accent px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-concord-accent-strong"
               >
                 Send
