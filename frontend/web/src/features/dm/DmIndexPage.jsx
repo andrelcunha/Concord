@@ -44,10 +44,14 @@ export function DmIndexPage() {
   const sendFriendRequest = useDmStore((state) => state.sendFriendRequest)
   const pendingRequestUserIds = useDmStore((state) => state.pendingRequestUserIds)
   const createOrGetConversation = useDmStore((state) => state.createOrGetConversation)
+  const removeFriend = useDmStore((state) => state.removeFriend)
+  const blockUser = useDmStore((state) => state.blockUser)
+  const friendActionByUserId = useDmStore((state) => state.friendActionByUserId)
   const isCreatingConversation = useDmStore((state) => state.isCreatingConversation)
   const [activeFilter, setActiveFilter] = React.useState('online')
   const [search, setSearch] = React.useState('')
   const [mode, setMode] = React.useState('friends')
+  const [openMenuUserId, setOpenMenuUserId] = React.useState(null)
 
   React.useEffect(() => {
     fetchFriends()
@@ -79,6 +83,17 @@ export function DmIndexPage() {
     return () => window.clearTimeout(timeout)
   }, [mode, search, searchUsers])
 
+  React.useEffect(() => {
+    function closeMenu() {
+      setOpenMenuUserId(null)
+    }
+
+    document.addEventListener('click', closeMenu)
+    return () => {
+      document.removeEventListener('click', closeMenu)
+    }
+  }, [])
+
   const normalizedSearch = search.trim().toLowerCase()
   const onlineFriends = friends
   const visibleFriends = (activeFilter === 'online' ? onlineFriends : friends).filter((friend) =>
@@ -96,6 +111,22 @@ export function DmIndexPage() {
 
   async function handleSendFriendRequest(user) {
     await sendFriendRequest(user.user_id)
+  }
+
+  async function handleRemoveFriend(event, userId) {
+    event.stopPropagation()
+    const removed = await removeFriend(userId)
+    if (removed) {
+      setOpenMenuUserId(null)
+    }
+  }
+
+  async function handleBlockUser(event, userId) {
+    event.stopPropagation()
+    const blocked = await blockUser(userId)
+    if (blocked) {
+      setOpenMenuUserId(null)
+    }
   }
 
   if (isLoadingFriends && friends.length === 0) {
@@ -275,6 +306,48 @@ export function DmIndexPage() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold text-concord-text">{friend.username}</p>
                     <p className="mt-1 text-sm text-concord-muted">Online</p>
+                  </div>
+
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        setOpenMenuUserId((current) => (current === friend.user_id ? null : friend.user_id))
+                      }}
+                      className="rounded-full px-3 py-2 text-concord-muted transition hover:bg-concord-panel hover:text-concord-text"
+                      aria-label={`Open actions for ${friend.username}`}
+                    >
+                      ⋮
+                    </button>
+
+                    {openMenuUserId === friend.user_id ? (
+                      <div
+                        className="absolute right-0 top-12 z-20 min-w-44 rounded-2xl border border-concord-border bg-concord-panel p-2 shadow-[0_18px_40px_rgba(0,0,0,0.35)]"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <button
+                          type="button"
+                          onClick={(event) => handleRemoveFriend(event, friend.user_id)}
+                          disabled={Boolean(friendActionByUserId[String(friend.user_id)])}
+                          className="flex w-full rounded-xl px-3 py-2 text-left text-sm text-concord-text transition hover:bg-concord-panel-soft disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {friendActionByUserId[String(friend.user_id)] === 'removing'
+                            ? 'Removing...'
+                            : 'Remove Friend'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(event) => handleBlockUser(event, friend.user_id)}
+                          disabled={Boolean(friendActionByUserId[String(friend.user_id)])}
+                          className="mt-1 flex w-full rounded-xl px-3 py-2 text-left text-sm text-concord-danger transition hover:bg-concord-danger/10 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {friendActionByUserId[String(friend.user_id)] === 'blocking'
+                            ? 'Blocking...'
+                            : 'Block'}
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
                 </button>
               ))}

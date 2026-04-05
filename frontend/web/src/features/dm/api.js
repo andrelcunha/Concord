@@ -60,3 +60,14 @@ export async function acceptFriendRequestRequest(friendshipId) {
 export async function rejectFriendRequestRequest(friendshipId) {
   await apiClient.post(`/api/friends/requests/${friendshipId}/reject`)
 }
+
+export async function removeFriendRequest(friendUserId) {
+  await apiClient.delete(`/api/friends/${friendUserId}`)
+}
+
+export async function blockUserRequest(blockedUserId) {
+  const response = await apiClient.post('/api/blocks', {
+    blocked_user_id: Number(blockedUserId),
+  })
+  return response.data
+}

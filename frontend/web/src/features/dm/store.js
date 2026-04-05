@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 
 import {
+  acceptFriendRequestRequest,
+  blockUserRequest,
   createOrGetDmConversationRequest,
   getDmConversationRequest,
   hideDmConversationRequest,
@@ -9,9 +11,9 @@ import {
   listIncomingFriendRequestsRequest,
   listFriendsRequest,
   rejectFriendRequestRequest,
+  removeFriendRequest,
   searchUsersRequest,
   sendFriendRequestRequest,
-  acceptFriendRequestRequest,
 } from '@/features/dm/api'
 
 export const useDmStore = create((set, get) => ({
@@ -30,6 +32,7 @@ export const useDmStore = create((set, get) => ({
   isSearchingUsers: false,
   searchUsersError: '',
   pendingRequestUserIds: {},
+  friendActionByUserId: {},
   isCreatingConversation: false,
   hidingConversationId: null,
   messagesByConversationId: {},
@@ -284,6 +287,104 @@ export const useDmStore = create((set, get) => ({
     }
   },
 
+  removeFriend: async (friendUserId) => {
+    if (!friendUserId || get().friendActionByUserId[String(friendUserId)]) {
+      return false
+    }
+
+    set((state) => ({
+      friendActionByUserId: {
+        ...state.friendActionByUserId,
+        [String(friendUserId)]: 'removing',
+      },
+      friendsError: '',
+    }))
+
+    try {
+      await removeFriendRequest(friendUserId)
+      set((state) => {
+        const nextConversations = state.conversations.filter(
+          (conversation) => conversation.other_user?.user_id !== friendUserId,
+        )
+        const nextConversationsById = { ...state.conversationsById }
+        Object.keys(nextConversationsById).forEach((conversationId) => {
+          if (nextConversationsById[conversationId]?.other_user?.user_id === friendUserId) {
+            delete nextConversationsById[conversationId]
+          }
+        })
+
+        return {
+          friends: state.friends.filter((friend) => friend.user_id !== friendUserId),
+          conversations: nextConversations,
+          conversationsById: nextConversationsById,
+          friendActionByUserId: {
+            ...state.friendActionByUserId,
+            [String(friendUserId)]: '',
+          },
+        }
+      })
+      return true
+    } catch (error) {
+      set((state) => ({
+        friendActionByUserId: {
+          ...state.friendActionByUserId,
+          [String(friendUserId)]: '',
+        },
+        friendsError: error.response?.data?.error ?? 'Failed to remove friend',
+      }))
+      return false
+    }
+  },
+
+  blockUser: async (blockedUserId) => {
+    if (!blockedUserId || get().friendActionByUserId[String(blockedUserId)]) {
+      return false
+    }
+
+    set((state) => ({
+      friendActionByUserId: {
+        ...state.friendActionByUserId,
+        [String(blockedUserId)]: 'blocking',
+      },
+      friendsError: '',
+    }))
+
+    try {
+      await blockUserRequest(blockedUserId)
+      set((state) => {
+        const nextConversations = state.conversations.filter(
+          (conversation) => conversation.other_user?.user_id !== blockedUserId,
+        )
+        const nextConversationsById = { ...state.conversationsById }
+        Object.keys(nextConversationsById).forEach((conversationId) => {
+          if (nextConversationsById[conversationId]?.other_user?.user_id === blockedUserId) {
+            delete nextConversationsById[conversationId]
+          }
+        })
+
+        return {
+          friends: state.friends.filter((friend) => friend.user_id !== blockedUserId),
+          conversations: nextConversations,
+          conversationsById: nextConversationsById,
+          friendActionByUserId: {
+            ...state.friendActionByUserId,
+            [String(blockedUserId)]: '',
+          },
+        }
+      })
+      return true
+    } catch (error) {
+      set((state) => ({
+        friendActionByUserId: {
+          ...state.friendActionByUserId,
+          [String(blockedUserId)]: '',
+        },
+        friendsError: error.response?.data?.error ?? 'Failed to block user',
+      }))
+      return false
+    }
+  },
+
   createOrGetConversation: async (otherUserId) => {
     if (!otherUserId || get().isCreatingConversation) {
       return null
@@ -523,6 +624,7 @@ export const useDmStore = create((set, get) => ({
       isSearchingUsers: false,
       searchUsersError: '',
       pendingRequestUserIds: {},
+      friendActionByUserId: {},
       isCreatingConversation: false,
       hidingConversationId: null,
       messagesByConversationId: {},
