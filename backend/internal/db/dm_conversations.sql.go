@@ -65,6 +65,73 @@ func (q *Queries) GetDmConversationByUserPair(ctx context.Context, arg GetDmConv
 	return i, err
 }
 
+const getDmConversationForUser = `-- name: GetDmConversationForUser :one
+SELECT
+    c.id,
+    c.created_at,
+    other_user.id AS other_user_id,
+    other_user.username AS other_username,
+    other_user.avatar_url AS other_avatar_url,
+    other_user.avatar_color AS other_avatar_color
+FROM dm_conversations c
+JOIN dm_conversation_participants self_participant
+    ON self_participant.conversation_id = c.id
+JOIN dm_conversation_participants other_participant
+    ON other_participant.conversation_id = c.id
+   AND other_participant.user_id <> self_participant.user_id
+JOIN users other_user ON other_user.id = other_participant.user_id
+WHERE c.id = $1
+  AND self_participant.user_id = $2
+LIMIT 1
+`
+
+type GetDmConversationForUserParams struct {
+	ID     int32
+	UserID int32
+}
+
+type GetDmConversationForUserRow struct {
+	ID               int32
+	CreatedAt        pgtype.Timestamptz
+	OtherUserID      int32
+	OtherUsername    string
+	OtherAvatarUrl   pgtype.Text
+	OtherAvatarColor pgtype.Text
+}
+
+func (q *Queries) GetDmConversationForUser(ctx context.Context, arg GetDmConversationForUserParams) (GetDmConversationForUserRow, error) {
+	row := q.db.QueryRow(ctx, getDmConversationForUser, arg.ID, arg.UserID)
+	var i GetDmConversationForUserRow
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.OtherUserID,
+		&i.OtherUsername,
+		&i.OtherAvatarUrl,
+		&i.OtherAvatarColor,
+	)
+	return i, err
+}
+
+const getDmConversationParticipant = `-- name: GetDmConversationParticipant :one
+SELECT conversation_id, user_id, joined_at
+FROM dm_conversation_participants
+WHERE conversation_id = $1
+  AND user_id = $2
+`
+
+type GetDmConversationParticipantParams struct {
+	ConversationID int32
+	UserID         int32
+}
+
+func (q *Queries) GetDmConversationParticipant(ctx context.Context, arg GetDmConversationParticipantParams) (DmConversationParticipant, error) {
+	row := q.db.QueryRow(ctx, getDmConversationParticipant, arg.ConversationID, arg.UserID)
+	var i DmConversationParticipant
+	err := row.Scan(&i.ConversationID, &i.UserID, &i.JoinedAt)
+	return i, err
+}
+
 const getDmConversationVisibility = `-- name: GetDmConversationVisibility :one
 SELECT conversation_id, user_id, hidden_at
 FROM dm_conversation_visibility

@@ -11,6 +11,7 @@ import (
 	"github.com/andrelcunha/Concord/backend/internal/auth"
 	"github.com/andrelcunha/Concord/backend/internal/blocks"
 	"github.com/andrelcunha/Concord/backend/internal/channels"
+	"github.com/andrelcunha/Concord/backend/internal/dms"
 	"github.com/andrelcunha/Concord/backend/internal/friendships"
 	"github.com/andrelcunha/Concord/backend/internal/messages"
 	"github.com/andrelcunha/Concord/backend/internal/middleware"
@@ -60,6 +61,11 @@ func main() {
 	friendshipsRepo := friendships.NewRepository(dbPool)
 	friendshipsService := friendships.NewService(friendshipsRepo, blocksRepo)
 	friendships.RegisterFriendshipRoutes(api, friendshipsService)
+
+	// Initialize direct messages service
+	dmRepo := dms.NewRepository(dbPool)
+	dmService := dms.NewService(dmRepo, friendshipsRepo, blocksRepo)
+	dms.RegisterDmRoutes(api, dmService)
 
 	// Initialize websocket service
 	msgRepo := messages.NewRepository(dbPool)
