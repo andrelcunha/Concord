@@ -1,0 +1,25 @@
+meta {
+  name: Create Or Get Conversation
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/dms
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "other_user_id": 2
+  }
+}

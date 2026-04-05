@@ -1,0 +1,15 @@
+meta {
+  name: List Outgoing Requests
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/friends/requests/outgoing
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
